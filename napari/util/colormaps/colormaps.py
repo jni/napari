@@ -3,7 +3,7 @@ import os
 from .vendored import colorconv
 import numpy as np
 import vispy.color
-
+import math
 
 _matplotlib_list_file = os.path.join(os.path.dirname(__file__),
                                      'matplotlib_cmaps.txt')
@@ -183,3 +183,58 @@ def label_colormap(num_colors=256, seed=0.5):
     cmap = vispy.color.Colormap(colors=colors, controls=control_points,
                                 interpolation='zero')
     return cmap
+
+
+
+def label_random_colormap(labels, seed=[0.5,0.5,0.5], max_label=None):
+    """Attempt at a generating a random colormap shader.ArithmeticError
+
+    Parameters
+    ----------
+    labels : array of int
+        A set of labels or label image.
+    seed : float or array of float, length 3
+        The seed for the low discrepancy sequence generator.
+
+    Returns
+    -------
+    cmap : vispy.color.Colormap
+        A colormap for use with ``labels``. The labels are remapped so that
+        the maximum label falls on 1.0, since vispy requires colormaps to map
+        within [0, 1].
+    
+        Notes
+    -----
+    This is based on the shader included with neuroglancer:
+        https://github.com/google/neuroglancer/blob/master/src/neuroglancer/segment_color.ts
+
+    """
+    return LabelColormap(seed=seed)
+
+
+class LabelColormap(vispy.color.colormap.BaseColormap):
+    def __init__(self, seed=0.5):
+        self.seed = seed
+        self.update_shader()
+
+    def update_shader(self):
+        self.glsl_map = self.glsl_map_base.replace('$seed', "%.3f" % self.seed)
+
+    glsl_map_base = """
+    vec4 bad_random(float t) {
+        float r = 0.1 + 0.9 * fract(sin(13*t + t/$seed));
+        float g = 0.1 + 0.9 * fract(tan(37*t + t/$seed));
+        float b = 0.1 + 0.9 * fract(cos(17*t + t/$seed));
+        return vec4(r, g, b, 1.0);
+    }
+    """
+
+    def map(self, t):
+        # TODO: One should just call the shader directly using vispy.gloo()
+        def bad_random(t):
+            r = 0.1 + 0.9 * math.modf(math.sin(13*t + t/self.seed))
+            g = 0.1 + 0.9 * math.modf(math.tan(37*t + t/self.seed))
+            b = 0.1 + 0.9 * math.modf(math.cos(17*t + t/self.seed))
+            return np.array([r, g, b, 1.0])
+        return bad_random(t)
+    
