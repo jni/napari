@@ -15,6 +15,13 @@ def gui_qt():
     IPython with the Qt GUI event loop enabled by default by using
     ``ipython --gui=qt``.
     """
-    app = QApplication.instance() or QApplication(sys.argv)
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
+        execute = True
+    else:
+        execute = False
+        del app
     yield
-    app.exec_()
+    if execute:
+        app.exec_()

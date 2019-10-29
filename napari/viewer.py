@@ -1,3 +1,4 @@
+from ._qt.event_loop import gui_qt
 from ._qt.qt_viewer import QtViewer
 from ._qt.qt_main_window import Window
 from .components import ViewerModel
@@ -19,8 +20,9 @@ class Viewer(ViewerModel):
     """
 
     def __init__(self, title='napari', ndisplay=2, order=None):
-        super().__init__(title=title, ndisplay=ndisplay, order=order)
-        qt_viewer = QtViewer(self)
-        self.window = Window(qt_viewer)
-        self.screenshot = self.window.qt_viewer.screenshot
-        self.update_console = self.window.qt_viewer.console.push
+        with gui_qt():
+            super().__init__(title=title, ndisplay=ndisplay, order=order)
+            qt_viewer = QtViewer(self)
+            self.window = Window(qt_viewer)
+            self.screenshot = self.window.qt_viewer.screenshot
+            self.update_console = self.window.qt_viewer.console.push
