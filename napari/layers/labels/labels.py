@@ -12,7 +12,6 @@ from ...util.misc import interpolate_coordinates
 from ...util.status_messages import format_float
 from ._constants import Mode
 
-
 class Labels(Image):
     """Labels (or segmentation) layer.
 
@@ -335,23 +334,67 @@ class Labels(Image):
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
 
-    def _raw_to_displayed(self, raw):
+    def _raw_to_displayed(self, raw, basis=0):
         """Determine displayed image from a saved raw image and a saved seed.
 
         This function ensures that the 0 label gets mapped to the 0 displayed
         pixel.
 
+        The input is hashed using a 32-bit Fowler-Noll-Vol hash, a very easily
+        implemented non-cryptographic hash with good dispersion properties which has been
+        modified to work on an array of inputs, taking advantage of numpy vectorised operations.
+        The final hash is divided by the maximum 32-bit integer 2^32 to return a pseudo-random
+        point in [0,1]
+
+        The original FNV-0 algorithm uses an initial value of zero, resulting in the property that
+        zero inputs will always hash to zeros, this was fixed in FNV-1 by adding an offset basis.
+        For our purposes we don't want the fix as zero labels should remain zero.
+        FNV-1a switches the order of the XOR and multiplication, reportedly resulting in slightly better
+        dispersion, so this implementation could be considered "FNV-0a" when run with basis = 0
+
+        See: http://isthe.com/chongo/tech/comp/fnv/
+
         Parameters
         -------
         raw : array or int
             Raw integer input image.
+        basis : int
+            Initial offset basis for the hash calculation, default is zero
 
         Returns
         -------
         image : array
             Image mapped between 0 and 1 to be displayed.
+
+        TODO: OK 20/12/19 this function is called twice on changing slice index in gui
+
         """
-        return raw / raw.max()
+        #Constants for FNV
+        fnv_32_prime = 2**24 + 2**8 + 0x93
+        uint32_max = 2 ** 32
+        #Convert to a byte array
+        bdata = np.frombuffer(raw, dtype=np.uint8)
+        #Reshape to access individual bytes for each integer
+        bdata = bdata.reshape((raw.size, raw.itemsize))
+        #Array for hash values, by using an offset basis of zero,
+        # we can take advantage of the fact that FNV-0 hashes zero to zero
+        if basis == 0:
+            hval = np.zeros(shape=(raw.size), dtype=np.uint32)
+        else:
+            hval = np.full(shape=(raw.size), fill_value=basis, dtype=np.uint32)
+        #Perform the FNV hash, one step for each byte in input values
+        for i in range(raw.itemsize):
+            hval = hval ^ bdata[::,i]
+            hval = (hval * fnv_32_prime) % uint32_max
+        #Normalize to [0,1]
+        hval = hval / float(uint32_max)
+        #Restore original data shape
+        hval = hval.reshape(raw.shape)
+        #If we set a basis other than zero, need to zero outputs where input was zero
+        if basis != 0:
+            hval[raw == 0] = 0
+        #Return [0,1] data
+        return hval
 
     def new_colormap(self):
         self.seed = np.random.rand()
