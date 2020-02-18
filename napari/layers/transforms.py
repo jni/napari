@@ -82,7 +82,7 @@ class Translate(Transform):
 
     @property
     def inverse(self):
-        return Translate(-self.translate)
+        return Translate(-np.array(self.vector))
 
     def set_slice(self, axes: Sequence[int]) -> Translate:
         return Translate(self.translate[axes])
