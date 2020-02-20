@@ -42,6 +42,24 @@ class Transform:
 
 
 class TransformChain(ListModel, Transform):
+    """Class performing an ordered sequence of transforms.
+
+    Parameters
+    ----------
+    transforms : list
+        List of napari transforms to chain together.
+
+    Attributes
+    ----------
+
+    events : vispy.util.event.EmitterGroup
+        Event hooks:
+            * added(item, index): whenever an item is added
+            * removed(item): whenever an item is removed
+            * reordered(): whenever the list is reordered
+
+    """
+
     def __init__(self, transforms=[]):
         super().__init__(
             basetype=Transform,
@@ -67,6 +85,10 @@ class Translate(Transform):
     Translation is broadcast to 0 in leading dimensions, so that, for example,
     a translation of [4, 18, 34] in 3D can be used as a translation of
     [0, 4, 18, 34] in 4D without modification.
+
+    Attributes
+    ----------
+    translate : ndarray
     """
 
     def __init__(self, translate=(0.0,), name='translate'):
@@ -92,6 +114,10 @@ class Scale(Transform):
     """n-dimensional scale class.
 
     An empty scale class implies a scale of 1.
+
+    Attributes
+    ----------
+    scale : ndarray
     """
 
     def __init__(self, scale=(1.0,), name='scale'):
