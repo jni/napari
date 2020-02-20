@@ -24,6 +24,8 @@ class Transform:
         self.name = name
         if func is tz.identity:
             self._inverse_func = tz.identity
+        self.translate = None
+        self.scale = None
 
     def __call__(self, coords):
         """Transform input coordinates to output."""
