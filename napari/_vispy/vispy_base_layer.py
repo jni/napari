@@ -1,7 +1,8 @@
 from vispy.gloo import gl
 from vispy.app import Canvas
-from vispy.visuals.transforms import STTransform
 from abc import ABC, abstractmethod
+
+from .vispy_transforms import VispyTransformChain
 
 
 class VispyBaseLayer(ABC):
@@ -63,13 +64,12 @@ class VispyBaseLayer(ABC):
 
     @property
     def _master_transform(self):
-        """vispy.visuals.transforms.STTransform:
-        Central node's firstmost transform.
+        """Central node's firstmost transform.
         """
         # whenever a new parent is set, the transform is reset
         # to a NullTransform so we reset it here
-        if not isinstance(self.node.transform, STTransform):
-            self.node.transform = STTransform()
+        if not isinstance(self.node.transform, VispyTransformChain):
+            self.node.transform = VispyTransformChain()
 
         return self.node.transform
 
