@@ -74,8 +74,8 @@ class VispyTransformChain(ChainTransform):
             self.translate = tmp_translate
             self.simplified_transform = self.transform_chain.simplified
         else:
-            self.scale = None
-            self.translate = None
+            self.scale = np.array([1.0, 1.0, 1.0, 1.0])
+            self.translate = np.array([0.0, 0.0, 0.0, 0.0])
             self.simplified_transform = self.transform_chain.simplified
 
     def _add(self, event):
