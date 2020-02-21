@@ -1,8 +1,10 @@
 import numpy as np
 from vispy.visuals.transforms import STTransform, ChainTransform
 
+from ..layers.transforms import TransformChain
 
-class VispyTransformChain:
+
+class VispyTransformChain(ChainTransform):
     """Class containing an ordered sequence of vispy transforms.
 
     Parameters
@@ -12,6 +14,8 @@ class VispyTransformChain:
 
     Attributes
     ----------
+    changed : #TODO
+        #TODO
     scale : ndarray, shape(4)
         Combined scale of all chained transforms, vispy format (X,Y,Z,T).
     simplified_transform : vispy.visuals.transforms.ChainTransform
@@ -23,15 +27,18 @@ class VispyTransformChain:
         Combined tranlation of all chained transforms, vispy format (X,Y,Z,T).
     """
 
-    def __init__(self, napari_transform_chain):
+    def __init__(self, napari_transform_chain=TransformChain()):
         self.napari_transform_chain = napari_transform_chain
 
         self.transform_chain = self._vispy_transform_chain()
         self._calculate_attributes()
 
+        self.changed = self.transform_chain.changed
+
         self.napari_transform_chain.events.added.connect(self._add)
         self.napari_transform_chain.events.removed.connect(self._remove)
-        self.transform_chain.events.reordered.connect(self._reorder)
+        self.napari_transform_chain.events.reordered.connect(self._reorder)
+        self.napari_transform_chain.events.changed.connect(self._changed)
 
     def _vispy_transform_chain(self):
         """Builds vispy ChainTransform from a napari TransformChain."""
@@ -44,24 +51,32 @@ class VispyTransformChain:
             vispy_transforms.append(
                 STTransform(scale=scale, translate=translate)
             )
-        self.transform_chain = ChainTransform(vispy_transforms)
-        return self.transform_chain
+        vispy_transform_chain = ChainTransform(vispy_transforms)
+        self.transform_chain = vispy_transform_chain
+        self.__dict__.update(vispy_transform_chain.__dict__)
+        self._calculate_attributes()
+        return vispy_transform_chain
 
     def _calculate_attributes(self):
         """Simplified transformation matrix, scale, and transle attributes.
 
         Combines all transforms in the VispyTransformChain.
         """
-        for idx, t in enumerate(self.transform_chain.transforms):
-            if idx == 0:
-                tmp_scale = t.scale
-                tmp_translate = t.translate
-            else:
-                tmp_scale = tmp_scale * t.scale
-                tmp_translate = (tmp_translate * t.scale) + t.translate
-        self.scale = tmp_scale
-        self.translate = tmp_translate
-        self.simplified_transform = self.transform_chain.simplified
+        if self.transform_chain.transforms != []:
+            for idx, t in enumerate(self.transform_chain.transforms):
+                if idx == 0:
+                    tmp_scale = t.scale
+                    tmp_translate = t.translate
+                else:
+                    tmp_scale = tmp_scale * t.scale
+                    tmp_translate = (tmp_translate * t.scale) + t.translate
+            self.scale = tmp_scale
+            self.translate = tmp_translate
+            self.simplified_transform = self.transform_chain.simplified
+        else:
+            self.scale = None
+            self.translate = None
+            self.simplified_transform = self.transform_chain.simplified
 
     def _add(self, event):
         """Insert vispy transform `event.item` at index `event.index`."""
@@ -79,4 +94,7 @@ class VispyTransformChain:
         self._calculate_attributes()
 
     def _reorder(self, event=None):
+        raise NotImplementedError()
+
+    def _changed(self, event=None):
         raise NotImplementedError()
