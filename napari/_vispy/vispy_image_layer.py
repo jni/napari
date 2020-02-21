@@ -204,7 +204,7 @@ class VispyImageLayer(VispyBaseLayer):
         top_left : tuple of int
             Coordinates of top left pixel.
         """
-        nd = self.layer.dims.ndisplay
+        nd = len(self.layer.dims.displayed)
         # Find image coordinate of top left canvas pixel
         if self.node.canvas is not None:
             transform = self.node.canvas.scene.node_transform(self.node)
