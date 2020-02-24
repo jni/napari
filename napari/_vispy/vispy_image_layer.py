@@ -6,6 +6,7 @@ import numpy as np
 from .vispy_base_layer import VispyBaseLayer
 from ..layers.image._constants import Rendering
 from ..layers import Image, Labels
+from ..layers.transforms import Scale, Translate
 
 
 texture_dtypes = [
@@ -143,26 +144,42 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.threshold = float(self.layer.attenuation)
 
     def _on_scale_change(self, event=None):
-        self.scale = np.array(
-            [
-                self.layer.scale[d] * self.layer._scale_view[d]
-                for d in self.layer.dims.displayed[::-1]
-            ]
-        )
+        name = 'scale_vispy_image_layer'
+        new_scale_values = [
+            self.layer.scale[d] for d in self.layer.dims.displayed[::-1]
+        ]
+        new_transform = Scale(new_scale_values, name=name)
+        try:
+            self.layer.transforms[name]
+        except KeyError:
+            pass
+        else:
+            self.layer.transforms.remove(self.layer.transforms[name])
+        finally:
+            self.layer.transforms.append(new_transform)
+
         if self.layer.is_pyramid:
             self.layer.top_left = self.find_top_left()
         self.layer.position = self._transform_position(self._position)
 
     def _on_translate_change(self, event=None):
-        self.translate = np.array(
-            [
-                self.layer.translate[d]
-                + self.layer._translate_view[d]
-                + self.layer.translate_grid[d]
-                for d in self.layer.dims.displayed[::-1]
-            ]
-        )
-        self.layer.position = self._transform_position(self._position)
+        name = 'translate_vispy_base_layer'
+        new_translate_values = [
+            self.layer.translate[d]
+            + self.layer._translate_view[d]
+            + self.layer.translate_grid[d]
+            for d in self.layer.dims.displayed[::-1]
+        ]
+        new_transform = Translate(new_translate_values, name=name)
+        try:
+            self.layer.transforms[name]
+        except KeyError:
+            pass
+        else:
+            self.layer.transforms.remove(self.layer.transforms[name])
+        finally:
+            self.layer.transforms.append(new_transform)
+            self.layer.position = self._transform_position(self._position)
 
     def compute_data_level(self, size):
         """Computed what level of the pyramid should be viewed given the
