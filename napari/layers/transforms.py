@@ -78,6 +78,46 @@ class TransformChain(ListModel, Transform):
     def set_slice(self, axes: Sequence[int]) -> TransformChain:
         return TransformChain([tf.set_slice(axes) for tf in self])
 
+    def _update_attributes(self):
+        if self != []:
+            for idx, t in enumerate(self):
+                # Account for the fact t.scale or t.translate may equal None
+                if t.scale is None:
+                    t.scale = np.array([1.0])
+                if t.translate is None:
+                    t.translate = np.array([0.0])
+                if idx == 0:
+                    tmp_scale = t.scale
+                    tmp_translate = t.translate
+                else:
+                    tmp_scale = tmp_scale * t.scale
+                    tmp_translate = (tmp_translate * t.scale) + t.translate
+            self._scale = tmp_scale
+            self._translate = tmp_translate
+        else:
+            self._scale = np.array([1.0])
+            self._translate = np.array([0.0])
+
+    @property
+    def scale(self):
+        """Scale of all the chained transforms combined.
+
+        No setter method: you should not modify this attribute directly,
+        but instead add/remove elements to napari TransformChain.
+        """
+        self._update_attributes()
+        return self._scale
+
+    @property
+    def translate(self):
+        """Translation of all the chained transforms combined.
+
+        No setter method: you should not modify this attribute directly,
+        but instead add/remove elements to napari TransformChain.
+        """
+        self._update_attributes()
+        return self._translate
+
 
 class IdentityTransform(Transform):
     """n-dimensional identity transformation class.
