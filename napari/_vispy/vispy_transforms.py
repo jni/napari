@@ -36,7 +36,6 @@ class VispyTransformChain(ChainTransform):
         self.napari_transform_chain.events.added.connect(self._add)
         self.napari_transform_chain.events.removed.connect(self._remove)
         self.napari_transform_chain.events.reordered.connect(self._reorder)
-        self.napari_transform_chain.events.changed.connect(self._changed)
 
     @property
     def scale(self):
@@ -134,7 +133,4 @@ class VispyTransformChain(ChainTransform):
         self.transform_chain.transforms.pop(event.index)
 
     def _reorder(self, event=None):
-        raise NotImplementedError()
-
-    def _changed(self, event=None):
         raise NotImplementedError()
