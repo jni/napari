@@ -152,7 +152,9 @@ class VispyBaseLayer(ABC):
     def _on_translate_change(self, event=None):
         name = 'translate_vispy_base_layer'
         new_translate_values = [
-            self.layer.translate[d] + self.layer.translate_grid[d]
+            self.layer.translate[d]
+            + self.layer._translate_view[d]
+            + self.layer.translate_grid[d]
             for d in self.layer.dims.displayed[::-1]
         ]
         new_transform = Translate(new_translate_values, name=name)
