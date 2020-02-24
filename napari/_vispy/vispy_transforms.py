@@ -14,11 +14,9 @@ class VispyTransformChain(ChainTransform):
 
     Attributes
     ----------
-    changed : #TODO
-        #TODO
     scale : ndarray, shape(4)
         Combined scale of all chained transforms, vispy format (X,Y,Z,T).
-    simplified_transform : vispy.visuals.transforms.ChainTransform
+    simplified : vispy.visuals.transforms.ChainTransform
         Simplified ChainTransform where transforms have been combined into one.
         Used to reduce compute time, since a single matrix operation is faster.
     transform_chain : vispy.visuals.transforms.ChainTransform
@@ -40,21 +38,60 @@ class VispyTransformChain(ChainTransform):
         self.napari_transform_chain.events.reordered.connect(self._reorder)
         self.napari_transform_chain.events.changed.connect(self._changed)
 
+    @property
+    def scale(self):
+        """Combined scale of all elements in the VispyChainTransform.
+
+        You should not directly modify the scale property of a
+        VispyChainTransform. Instead you should append or insert another
+        transform to the napari TransformChain, which will update this
+        property using event emitters.
+
+        Returns
+        -------
+        ndarray, shape (4,)
+            Combined scale of all elements in the VispyChainTransform.
+            Vispy format expects (X,Y,Z,T)
+        """
+        self._calculate_attributes()
+        return self._scale
+
+    @property
+    def translate(self):
+        """Combined translation of all elements in the VispyChainTransform.
+
+        You should not directly modify the translate property of a
+        VispyChainTransform. Instead you should append or insert another
+        transform to the napari TransformChain, which will update this
+        property using event emitters.
+
+        Returns
+        -------
+        ndarray, shape (4,)
+            Combined translation of all elements in the VispyChainTransform.
+            Vispy format expects (X,Y,Z,T)
+        """
+        self._calculate_attributes()
+        return self._translate
+
+    @property
+    def simplified(self):
+        return self._simplified
+
     def _vispy_transform_chain(self):
         """Builds vispy ChainTransform from a napari TransformChain."""
         vispy_transforms = []
         for t in self.napari_transform_chain:
             # From napari format (t, z, y, x)
             # to the vispy format (x, y, z, ?)
-            translate = np.flip(t.translate)  # vispy ordered array
-            scale = np.flip(t.scale)  # vispy ordered array
+            _translate = np.flip(t.translate)  # vispy ordered array
+            _scale = np.flip(t.scale)  # vispy ordered array
             vispy_transforms.append(
-                STTransform(scale=scale, translate=translate)
+                STTransform(scale=_scale, translate=_translate)
             )
         vispy_transform_chain = ChainTransform(vispy_transforms)
         self.transform_chain = vispy_transform_chain
         self.__dict__.update(vispy_transform_chain.__dict__)
-        self._calculate_attributes()
         return vispy_transform_chain
 
     def _calculate_attributes(self):
@@ -64,34 +101,37 @@ class VispyTransformChain(ChainTransform):
         """
         if self.transform_chain.transforms != []:
             for idx, t in enumerate(self.transform_chain.transforms):
+                if t.scale is None:
+                    t.scale = np.array([1.0])
+                if t.translate is None:
+                    t.translate = np.array([0.0])
                 if idx == 0:
                     tmp_scale = t.scale
                     tmp_translate = t.translate
                 else:
                     tmp_scale = tmp_scale * t.scale
                     tmp_translate = (tmp_translate * t.scale) + t.translate
-            self.scale = tmp_scale
-            self.translate = tmp_translate
-            self.simplified_transform = self.transform_chain.simplified
+            self._scale = tmp_scale
+            self._translate = tmp_translate
+            self._simplified = self.transform_chain.simplified
         else:
-            self.scale = np.array([1.0, 1.0, 1.0, 1.0])
-            self.translate = np.array([0.0, 0.0, 0.0, 0.0])
-            self.simplified_transform = self.transform_chain.simplified
+            self._scale = np.array([1.0, 1.0, 1.0, 1.0])
+            self._translate = np.array([0.0, 0.0, 0.0, 0.0])
+            self._simplified = self.transform_chain.simplified
 
     def _add(self, event):
         """Insert vispy transform `event.item` at index `event.index`."""
         transform_index = event.index
         # Convert from napari format (t, z, y, x) to vispy format (x, y, z, ?)
-        scale = np.flip(event.item.scale)  # vispy ordered array
-        translate = np.flip(event.item.translate)  # vispy ordered array
-        transform = STTransform(scale=scale, translate=translate)
-        self.transform_chain.transforms.insert(transform_index, transform)
+        _scale = np.flip(event.item.scale)  # vispy ordered array
+        _translate = np.flip(event.item.translate)  # vispy ordered array
+        _transform = STTransform(scale=_scale, translate=_translate)
+        self.transform_chain.transforms.insert(transform_index, _transform)
         self._calculate_attributes()
 
     def _remove(self, event):
         """Remove vispy transform at index `event.index`."""
         self.transform_chain.transforms.pop(event.index)
-        self._calculate_attributes()
 
     def _reorder(self, event=None):
         raise NotImplementedError()
