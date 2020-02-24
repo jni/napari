@@ -79,6 +79,21 @@ class TransformChain(ListModel, Transform):
         return TransformChain([tf.set_slice(axes) for tf in self])
 
 
+class IdentityTransform(Transform):
+    """n-dimensional identity transformation class.
+
+    Attributes
+    ----------
+    scale : ndarray
+    translate : ndarray
+    """
+
+    def __init__(self, scale=(1.0,), translate=(0.0,), name='identity'):
+        super().__init__(name=name)
+        self.scale = np.array(scale)
+        self.translate = np.array(translate)
+
+
 class Translate(Transform):
     """n-dimensional translation (shift) class.
 
