@@ -230,9 +230,18 @@ class VispyBaseLayer(ABC):
         self.layer.on_mouse_release(event)
 
     def on_draw(self, event):
-        """Called whenever the canvas is drawn.
+        """Called whenever the canvas is drawn, which happens whenever new
+        data is sent to the canvas or the camera is moved.
         """
         self.layer.scale_factor = self.scale_factor
+        if self.layer.is_pyramid:
+            size = self.camera.rect.size
+            data_level = self.compute_data_level(size)
+
+            if data_level != self.layer.data_level:
+                self.layer.data_level = data_level
+            else:
+                self.layer.top_left = self.find_top_left()
 
 
 def get_max_texture_sizes():

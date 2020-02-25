@@ -208,21 +208,6 @@ class VispyImageLayer(VispyBaseLayer):
 
         return top_left.astype(int)
 
-    def on_draw(self, event):
-        """Called whenever the canvas is drawn, which happens whenever new
-        data is sent to the canvas or the camera is moved.
-        """
-        self.layer.scale_factor = self.scale_factor
-        if self.layer.is_pyramid:
-            self.layer.scale_factor = self.scale_factor
-            size = self.camera.rect.size
-            data_level = self.compute_data_level(size)
-
-            if data_level != self.layer.data_level:
-                self.layer.data_level = data_level
-            else:
-                self.layer.top_left = self.find_top_left()
-
     def reset(self, event=None):
         self._reset_base()
         self._on_interpolation_change()
