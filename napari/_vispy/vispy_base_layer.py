@@ -134,7 +134,7 @@ class VispyBaseLayer(ABC):
         )
 
     def _on_scale_change(self, event=None):
-        name = 'scale_vispy_base_layer'
+        name = 'on_scale_change'
         new_scale_values = [
             self.layer.scale[d] for d in self.layer.dims.displayed[::-1]
         ]
@@ -152,7 +152,7 @@ class VispyBaseLayer(ABC):
             self.layer.position = self._transform_position(self._position)
 
     def _on_translate_change(self, event=None):
-        name = 'translate_vispy_base_layer'
+        name = 'on_translate_change'
         new_translate_values = [
             self.layer.translate[d]
             + self.layer._translate_view[d]
