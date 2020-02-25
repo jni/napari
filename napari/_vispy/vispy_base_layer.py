@@ -147,6 +147,8 @@ class VispyBaseLayer(ABC):
             self.layer.transforms.remove(self.layer.transforms[name])
         finally:
             self.layer.transforms.append(new_transform)
+            if self.layer.is_pyramid:
+                self.layer.top_left = self.find_top_left()
             self.layer.position = self._transform_position(self._position)
 
     def _on_translate_change(self, event=None):
