@@ -136,7 +136,8 @@ class VispyBaseLayer(ABC):
     def _on_scale_change(self, event=None):
         name = 'on_scale_change'
         new_scale_values = [
-            self.layer.scale[d] for d in self.layer.dims.displayed[::-1]
+            self.layer.scale[d] * self.layer._scale_view[d]
+            for d in self.layer.dims.displayed[::-1]
         ]
         new_transform = Scale(new_scale_values, name=name)
         try:
