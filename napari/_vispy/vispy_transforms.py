@@ -15,14 +15,18 @@ class VispyTransformChain(ChainTransform):
     Attributes
     ----------
     scale : ndarray, shape(4)
-        Combined scale of all chained transforms, vispy format (X,Y,Z,T).
+        Combined scale of all chained transforms.
+        Vispy homogeneous coordinates (X,Y,Z,W) where W equals 1.
+        https://en.wikipedia.org/wiki/Homogeneous_coordinates
     simplified : vispy.visuals.transforms.ChainTransform
         Simplified ChainTransform where transforms have been combined into one.
         Used to reduce compute time, since a single matrix operation is faster.
     transform_chain : vispy.visuals.transforms.ChainTransform
         Transform chain for an ordered sequence of vispy transforms.
     translate : ndarray, shape(4)
-        Combined tranlation of all chained transforms, vispy format (X,Y,Z,T).
+        Combined tranlation of all chained transforms.
+        Vispy homogeneous coordinates (X,Y,Z,W) where W equals 1.
+        https://en.wikipedia.org/wiki/Homogeneous_coordinates
     """
 
     def __init__(self, napari_transform_chain=TransformChain()):
@@ -50,7 +54,8 @@ class VispyTransformChain(ChainTransform):
         -------
         ndarray, shape (4,)
             Combined scale of all elements in the VispyChainTransform.
-            Vispy format expects (X,Y,Z,T)
+            Vispy homogeneous coordinates (X,Y,Z,W) where W equals 1.
+            https://en.wikipedia.org/wiki/Homogeneous_coordinates
         """
         self._calculate_attributes()
         return self._scale
@@ -68,7 +73,8 @@ class VispyTransformChain(ChainTransform):
         -------
         ndarray, shape (4,)
             Combined translation of all elements in the VispyChainTransform.
-            Vispy format expects (X,Y,Z,T)
+            Vispy homogeneous coordinates (X,Y,Z,W) where W equals 1.
+            https://en.wikipedia.org/wiki/Homogeneous_coordinates
         """
         self._calculate_attributes()
         return self._translate
@@ -81,8 +87,9 @@ class VispyTransformChain(ChainTransform):
         """Builds vispy ChainTransform from a napari TransformChain."""
         vispy_transforms = []
         for t in self.napari_transform_chain:
-            # From napari format (t, z, y, x)
-            # to the vispy format (x, y, z, ?)
+            # Convert from napari cartesian coordinates (t, z, y, x)
+            # to vispy homogeneous coordinates (x, y, z, w)
+            # https://en.wikipedia.org/wiki/Homogeneous_coordinates
             _translate = np.flip(t.translate)  # vispy ordered array
             _scale = np.flip(t.scale)  # vispy ordered array
             vispy_transforms.append(
@@ -121,7 +128,9 @@ class VispyTransformChain(ChainTransform):
     def _add(self, event):
         """Insert vispy transform `event.item` at index `event.index`."""
         transform_index = event.index
-        # Convert from napari format (t, z, y, x) to vispy format (x, y, z, ?)
+        # Convert from napari cartesian coordinates (t, z, y, x)
+        # to vispy homogeneous coordinates (x, y, z, w)
+        # https://en.wikipedia.org/wiki/Homogeneous_coordinates
         _scale = np.flip(event.item.scale)  # vispy ordered array
         _translate = np.flip(event.item.translate)  # vispy ordered array
         _transform = STTransform(scale=_scale, translate=_translate)
