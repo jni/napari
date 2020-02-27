@@ -24,6 +24,8 @@ class Transform:
         self.name = name
         if func is tz.identity:
             self._inverse_func = tz.identity
+        self.translate = None
+        self.scale = None
 
     def __call__(self, coords):
         """Transform input coordinates to output."""
@@ -42,6 +44,24 @@ class Transform:
 
 
 class TransformChain(ListModel, Transform):
+    """Class performing an ordered sequence of transforms.
+
+    Parameters
+    ----------
+    transforms : list
+        List of napari transforms to chain together.
+
+    Attributes
+    ----------
+
+    events : vispy.util.event.EmitterGroup
+        Event hooks:
+            * added(item, index): whenever an item is added
+            * removed(item): whenever an item is removed
+            * reordered(): whenever the list is reordered
+
+    """
+
     def __init__(self, transforms=[]):
         super().__init__(
             basetype=Transform,
@@ -58,6 +78,61 @@ class TransformChain(ListModel, Transform):
     def set_slice(self, axes: Sequence[int]) -> TransformChain:
         return TransformChain([tf.set_slice(axes) for tf in self])
 
+    def _update_attributes(self):
+        if self != []:
+            for idx, t in enumerate(self):
+                # Account for the fact t.scale or t.translate may equal None
+                if t.scale is None:
+                    t.scale = np.array([1.0])
+                if t.translate is None:
+                    t.translate = np.array([0.0])
+                if idx == 0:
+                    tmp_scale = t.scale
+                    tmp_translate = t.translate
+                else:
+                    tmp_scale = tmp_scale * t.scale
+                    tmp_translate = (tmp_translate * t.scale) + t.translate
+            self._scale = tmp_scale
+            self._translate = tmp_translate
+        else:
+            self._scale = np.array([1.0])
+            self._translate = np.array([0.0])
+
+    @property
+    def scale(self):
+        """Scale of all the chained transforms combined.
+
+        No setter method: you should not modify this attribute directly,
+        but instead add/remove elements to napari TransformChain.
+        """
+        self._update_attributes()
+        return self._scale
+
+    @property
+    def translate(self):
+        """Translation of all the chained transforms combined.
+
+        No setter method: you should not modify this attribute directly,
+        but instead add/remove elements to napari TransformChain.
+        """
+        self._update_attributes()
+        return self._translate
+
+
+class IdentityTransform(Transform):
+    """n-dimensional identity transformation class.
+
+    Attributes
+    ----------
+    scale : ndarray
+    translate : ndarray
+    """
+
+    def __init__(self, scale=(1.0,), translate=(0.0,), name='identity'):
+        super().__init__(name=name)
+        self.scale = np.array(scale)
+        self.translate = np.array(translate)
+
 
 class Translate(Transform):
     """n-dimensional translation (shift) class.
@@ -67,6 +142,10 @@ class Translate(Transform):
     Translation is broadcast to 0 in leading dimensions, so that, for example,
     a translation of [4, 18, 34] in 3D can be used as a translation of
     [0, 4, 18, 34] in 4D without modification.
+
+    Attributes
+    ----------
+    translate : ndarray
     """
 
     def __init__(self, translate=(0.0,), name='translate'):
@@ -92,6 +171,10 @@ class Scale(Transform):
     """n-dimensional scale class.
 
     An empty scale class implies a scale of 1.
+
+    Attributes
+    ----------
+    scale : ndarray
     """
 
     def __init__(self, scale=(1.0,), name='scale'):

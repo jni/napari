@@ -1,7 +1,9 @@
 from vispy.gloo import gl
 from vispy.app import Canvas
-from vispy.visuals.transforms import STTransform
 from abc import ABC, abstractmethod
+
+from .vispy_transforms import VispyTransformChain
+from ..layers.transforms import Scale, Translate
 
 
 class VispyBaseLayer(ABC):
@@ -58,18 +60,18 @@ class VispyBaseLayer(ABC):
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
         self.layer.events.blending.connect(self._on_blending_change)
+        self.layer.events.transforms.connect(self._on_transforms_change)
         self.layer.events.scale.connect(self._on_scale_change)
         self.layer.events.translate.connect(self._on_translate_change)
 
     @property
     def _master_transform(self):
-        """vispy.visuals.transforms.STTransform:
-        Central node's firstmost transform.
+        """Central node's firstmost transform.
         """
         # whenever a new parent is set, the transform is reset
         # to a NullTransform so we reset it here
-        if not isinstance(self.node.transform, STTransform):
-            self.node.transform = STTransform()
+        if not isinstance(self.node.transform, VispyTransformChain):
+            self.node.transform = VispyTransformChain()
 
         return self.node.transform
 
@@ -87,21 +89,21 @@ class VispyBaseLayer(ABC):
 
     @property
     def scale(self):
-        """sequence of float: Scale factors."""
-        return self._master_transform.scale
+        """sequence of float: Scale factors.
 
-    @scale.setter
-    def scale(self, scale):
-        self._master_transform.scale = scale
+        No setter method: you should not modify this attribute directly,
+        but instead add/remove elements to napari TransformChain.
+        """
+        return self._master_transform.scale
 
     @property
     def translate(self):
-        """sequence of float: Translation values."""
-        return self._master_transform.translate
+        """sequence of float: Translation values.
 
-    @translate.setter
-    def translate(self, translate):
-        self._master_transform.translate = translate
+        No setter method: you should not modify this attribute directly,
+        but instead add/remove elements to napari TransformChain.
+        """
+        return self._master_transform.translate
 
     @property
     def scale_factor(self):
@@ -126,18 +128,48 @@ class VispyBaseLayer(ABC):
         self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
-    def _on_scale_change(self, event=None):
-        self.scale = [
-            self.layer.scale[d] for d in self.layer.dims.displayed[::-1]
-        ]
-        self.layer.position = self._transform_position(self._position)
+    def _on_transforms_change(self, event=None):
+        raise NotImplementedError(
+            'No vispy function for _on_transforms_change'
+        )
 
-    def _on_translate_change(self, event=None):
-        self.translate = [
-            self.layer.translate[d] + self.layer.translate_grid[d]
+    def _on_scale_change(self, event=None):
+        name = 'on_scale_change'
+        new_scale_values = [
+            self.layer.scale[d] * self.layer._scale_view[d]
             for d in self.layer.dims.displayed[::-1]
         ]
-        self.layer.position = self._transform_position(self._position)
+        new_transform = Scale(new_scale_values, name=name)
+        try:
+            self.layer.transforms[name]
+        except KeyError:
+            pass
+        else:
+            self.layer.transforms.remove(self.layer.transforms[name])
+        finally:
+            self.layer.transforms.append(new_transform)
+            if self.layer.is_pyramid:
+                self.layer.top_left = self.find_top_left()
+            self.layer.position = self._transform_position(self._position)
+
+    def _on_translate_change(self, event=None):
+        name = 'on_translate_change'
+        new_translate_values = [
+            self.layer.translate[d]
+            + self.layer._translate_view[d]
+            + self.layer.translate_grid[d]
+            for d in self.layer.dims.displayed[::-1]
+        ]
+        new_transform = Translate(new_translate_values, name=name)
+        try:
+            self.layer.transforms[name]
+        except KeyError:
+            pass
+        else:
+            self.layer.transforms.remove(self.layer.transforms[name])
+        finally:
+            self.layer.transforms.append(new_transform)
+            self.layer.position = self._transform_position(self._position)
 
     def _transform_position(self, position):
         """Transform cursor position from canvas space (x, y) into image space.
@@ -198,9 +230,18 @@ class VispyBaseLayer(ABC):
         self.layer.on_mouse_release(event)
 
     def on_draw(self, event):
-        """Called whenever the canvas is drawn.
+        """Called whenever the canvas is drawn, which happens whenever new
+        data is sent to the canvas or the camera is moved.
         """
         self.layer.scale_factor = self.scale_factor
+        if self.layer.is_pyramid:
+            size = self.camera.rect.size
+            data_level = self.compute_data_level(size)
+
+            if data_level != self.layer.data_level:
+                self.layer.data_level = data_level
+            else:
+                self.layer.top_left = self.find_top_left()
 
 
 def get_max_texture_sizes():

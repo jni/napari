@@ -6,6 +6,8 @@ import numpy as np
 from skimage import img_as_ubyte
 from ._constants import Blending
 
+from ..transforms import TransformChain, Scale, Translate
+
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.keybindings import KeymapMixin
@@ -25,6 +27,8 @@ class Layer(KeymapMixin, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    transforms : napari.layers.transforms.TransformChain
+        Chain of image transforms belonging to the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -61,6 +65,8 @@ class Layer(KeymapMixin, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    transforms : napari.layers.transforms.TransformChain
+        Chain of image transforms belonging to the layer.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
     coordinates : tuple of float
@@ -109,6 +115,7 @@ class Layer(KeymapMixin, ABC):
         metadata=None,
         scale=None,
         translate=None,
+        transforms=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -130,14 +137,15 @@ class Layer(KeymapMixin, ABC):
         self.scale_factor = 1
 
         self.dims = Dims(ndim)
-        if scale is None:
-            self._scale = [1] * ndim
-        else:  # covers list and array-like inputs
-            self._scale = list(scale)
-        if translate is None:
-            self._translate = [0] * ndim
-        else:  # covers list and array-like inputs
-            self._translate = list(translate)
+        if transforms is None:
+            self._transforms = TransformChain()
+        if scale is not None:
+            self._transforms.append(Scale(scale))
+        if translate is not None:
+            self._transforms.append(Translate(translate))
+        self._scale = self._transforms.scale
+        self._translate = self._transforms.translate
+
         self._scale_view = np.ones(ndim)
         self._translate_view = np.zeros(ndim)
         self._translate_grid = np.zeros(ndim)
@@ -162,6 +170,7 @@ class Layer(KeymapMixin, ABC):
             deselect=Event,
             scale=Event,
             translate=Event,
+            transforms=Event,
             data=Event,
             name=Event,
             thumbnail=Event,
@@ -286,23 +295,38 @@ class Layer(KeymapMixin, ABC):
         self.events.editable()
 
     @property
+    def transforms(self):
+        """Chained transformations belonging to the layer."""
+        return self._transforms
+
+    @property
     def scale(self):
-        """list: Anisotropy factors to scale the layer by."""
+        """list: Anisotropy factors to scale the layer by.
+
+        You should not modify this attribute directly,
+        but instead add/remove elements to napari TransformChain.
+        """
         return self._scale
 
     @scale.setter
     def scale(self, scale):
+        raise ValueError('Should not set the scale directly')
         self._scale = scale
         self._update_dims()
         self.events.scale()
 
     @property
     def translate(self):
-        """list: Factors to shift the layer by."""
+        """list: Factors to shift the layer by.
+
+        You should not modify this attribute directly,
+        but instead add/remove elements to napari TransformChain.
+        """
         return self._translate
 
     @translate.setter
     def translate(self, translate):
+        raise ValueError('Should not set the translation directly')
         self._translate = translate
         self.events.translate()
 
