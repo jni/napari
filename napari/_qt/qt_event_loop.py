@@ -303,5 +303,8 @@ def run(
         )
         return
 
-    with notification_manager:
+    if os.getenv('NAPARI_CATCH_ERRORS') in {'0', 'False'}:
         app.exec_()
+    else:
+        with notification_manager:
+            app.exec_()
