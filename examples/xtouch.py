@@ -4,6 +4,8 @@ import pandas as pd
 import rtmidi.midiutil
 import time
 
+from superqt.utils import ensure_main_thread
+
 
 class XTouch:
     def __init__(self, viewer, hold_thresh=0.5):
@@ -56,6 +58,7 @@ class XTouch:
         )
         self.table.set_index('id', drop=False)
 
+    @ensure_main_thread
     def receive_set(self, message_time_tup, data):
         message, time = message_time_tup
         msg_type, control_id, value = message
