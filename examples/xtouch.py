@@ -4,6 +4,8 @@ import pandas as pd
 import rtmidi.midiutil
 import time
 
+from superqt.utils import ensure_main_thread
+
 
 class XTouch:
     def __init__(self, viewer, hold_thresh=0.5):
@@ -115,6 +117,7 @@ class XTouch:
 
         self.viewer.dims.events.current_step.connect(process_current_step_event)
 
+        @ensure_main_thread
         def fw0(value):
             prev_value = self.table.loc[rotary0_id, 'value']
             down = (prev_value > value) or (prev_value == value and value == 0)
@@ -127,6 +130,7 @@ class XTouch:
 
         self.table.loc[rotary0_id, 'fw'] = fw0
 
+        @ensure_main_thread
         def fw1(value):
             prev_value = self.table.loc[rotary1_id, 'value']
             up = (prev_value < value) or (prev_value == value and value == 127)
@@ -142,6 +146,7 @@ class XTouch:
         cond = (table['layer'] == layer) & (table['type'] == 'slider')
         slider_id = table.loc[cond, 'id']
 
+        @ensure_main_thread
         def change_opacity(value):
             vlayer = self.viewer.layers[-1]
             vlayer.opacity = value / 127
@@ -155,6 +160,7 @@ class XTouch:
         cond = (table['layer'] == control_layer) & (table['index'] == index)
         button_id = table.loc[cond, 'id']
 
+        @ensure_main_thread
         def fw(val):
             if val == 127:
                 if type(attr_value) is bool:
@@ -189,6 +195,7 @@ class XTouch:
         cond = (table['layer'] == control_layer) & (table['index'] == index)
         button_id = table.loc[cond, 'id']
 
+        @ensure_main_thread
         def func(val):
             if val > 0:
                 function(*args, **kwargs)
