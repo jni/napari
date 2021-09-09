@@ -4,6 +4,8 @@ import pandas as pd
 import rtmidi.midiutil
 import time
 
+from superqt.utils import ensure_main_thread
+
 
 class XTouch:
     def __init__(self, viewer, hold_thresh=0.5):
@@ -66,11 +68,13 @@ class XTouch:
         elif msg_type == 138:  # button press up
             self.receive_button(control_id, value)
 
+    @ensure_main_thread
     def receive_continuous(self, control_id, value):
         control = self.table.loc[control_id]
         if control['fw'] is not None:
             control['fw'](value)
 
+    @ensure_main_thread
     def receive_button(self, control_id, value):
         control = self.table.loc[control_id]
         if control['fw'] is not None:
