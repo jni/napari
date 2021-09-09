@@ -4,10 +4,11 @@ import pandas as pd
 import rtmidi.midiutil
 import time
 
+from superqt.qtcompat.QtCore import QObject
 from superqt.utils import ensure_main_thread
 
 
-class XTouch:
+class XTouch(QObject):
     def __init__(self, viewer, hold_thresh=0.5):
         self.viewer = viewer
         self.midi_in, _ = rtmidi.midiutil.open_midiinput(0)
