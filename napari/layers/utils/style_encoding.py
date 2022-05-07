@@ -284,3 +284,55 @@ def _empty_array_like(value: StyleValue) -> StyleArray:
     """Returns an empty array with the same type and remaining shape of the given value."""
     shape = (0,) + value.shape
     return np.empty_like(value, shape=shape)
+
+
+class StyleCollection(EventedModel):
+    """Base class for mapping channels to encodings.
+
+    Create an attribute named after each visual channel containing the
+    encoding for that channel.
+
+    Then implement the _channels and _encodings properties.
+    """
+
+    @property
+    def _channels(self) -> List[str]:
+        """List of channel names implemented in the Style.
+
+        Example: ['face_color', 'edge_color', 'size'].
+        """
+        return None
+
+    @property
+    def _encodings(self) -> List[StyleEncoding]:
+        """List of StyleEncodings, one per visual channel.
+
+        The order must match the order of `_channels`.
+        """
+        return None
+
+    def _apply(self, features: Any) -> None:
+        for encoding in self._encodings:
+            encoding._apply(features)
+
+    def _clear(self) -> None:
+        for encoding in self._encodings:
+            encoding.clear()
+
+    def _refresh(self, features: Any) -> None:
+        self._clear()
+        self._apply(features)
+
+    def _delete(self, indices: IndicesType) -> None:
+        for encoding in self._encodings:
+            encoding._delete(indices)
+
+    def _copy(self, indices) -> dict:
+        return {
+            ch: _get_style_values(prop, indices)
+            for ch, prop in zip(self._channels, self._encodings)
+        }
+
+    def _paste(self, **elements):
+        for channel, styled_values in elements.items():
+            getattr(self, channel)._append(styled_values)
