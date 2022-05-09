@@ -24,8 +24,10 @@ from ...utils.translations import trans
 from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
+from ..utils._color_encoding import ColorEncoding
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import _FeatureTable
+from ..utils.style_encoding import StyleCollection
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -55,6 +57,12 @@ for t, modes in _REV_SHAPE_HELP.items():
         _FWD_SHAPE_HELP[m] = t
 
 
+class LabelsStyleCollection(StyleCollection):
+    """Style encodings for displaying labels."""
+
+    color: ColorEncoding
+
+
 class Labels(_ImageBase):
     """Labels (or segmentation) layer.
 
@@ -76,9 +84,13 @@ class Labels(_ImageBase):
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
         to background.
-    color : dict of int to str or array
-        Custom label to color mapping. Values must be valid color names or RGBA
-        arrays.
+    style : LabelsStyleCollection or dict
+        Styling parameters. These determine how individual labels are displayed
+        as a function of their index, properties, etc. This can be given as a
+        LabelsStyleCollection class or a dictionary containing the correct
+        fields. For now, this is ``{'color': {'kind': 'random'}}`` or
+        ``{'color': {'feature': 'feature_name', 'contrast_limits': [0, 1]}}``,
+        for example.
     seed : float
         Seed for colormap random generator.
     name : str
@@ -227,7 +239,7 @@ class Labels(_ImageBase):
         num_colors=50,
         features=None,
         properties=None,
-        color=None,
+        style=None,
         seed=0.5,
         name=None,
         metadata=None,
@@ -310,7 +322,8 @@ class Labels(_ImageBase):
 
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
-        self.color = color
+
+        self.style = LabelsStyleCollection(style)
 
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode

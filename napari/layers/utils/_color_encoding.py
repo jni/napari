@@ -7,6 +7,7 @@ from typing_extensions import Protocol, runtime_checkable
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
+from ...utils.colormaps.random_colormap import LabelsRandomColormap
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.translations import trans
 from .color_transformations import ColorType
@@ -129,6 +130,26 @@ class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     def __call__(self, features: Any) -> ColorArray:
         # map is not expecting some column-likes (e.g. pandas.Series), so ensure
         # this is a numpy array first.
+        values = np.asarray(features[self.feature])
+        return self.colormap.map(values)
+
+
+class RandomColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
+    """Encodes color values from integer features.
+
+    Attributes
+    ----------
+    feature : str
+        The name of the feature that contains the integer values.
+    colormap : LabelsRandomColormap
+        Maps the integer features to colors.
+    """
+
+    encoding_type: Literal['RandomColorEncoding'] = 'RandomColorEncoding'
+    colormap: LabelsRandomColormap
+    seed: Union[int, float] = 0.5
+
+    def __call__(self, features: Any) -> ColorArray:
         values = np.asarray(features[self.feature])
         return self.colormap.map(values)
 

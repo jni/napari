@@ -291,8 +291,6 @@ class StyleCollection(EventedModel):
 
     Create an attribute named after each visual channel containing the
     encoding for that channel.
-
-    Then implement the _channels and _encodings properties.
     """
 
     @property
@@ -301,7 +299,7 @@ class StyleCollection(EventedModel):
 
         Example: ['face_color', 'edge_color', 'size'].
         """
-        return None
+        return list(self.__fields__)
 
     @property
     def _encodings(self) -> List[StyleEncoding]:
@@ -309,7 +307,7 @@ class StyleCollection(EventedModel):
 
         The order must match the order of `_channels`.
         """
-        return None
+        return [getattr(self, channel_name) for channel_name in self._channels]
 
     def _apply(self, features: Any) -> None:
         for encoding in self._encodings:
