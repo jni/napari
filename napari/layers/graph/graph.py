@@ -268,6 +268,7 @@ class Graph(_BasePoints):
     ) -> None:
         self._data = self._fix_data(data, ndim)
         self._edges_indices_view: ArrayLike = []
+        self._edges_visible = True
 
         super().__init__(
             self._data,
@@ -317,6 +318,7 @@ class Graph(_BasePoints):
             edge_color=Event,
             current_edge_color=Event,
         )
+        self.events.add(edges_visible=Event)
 
     @staticmethod
     def _fix_data(
@@ -359,6 +361,15 @@ class Graph(_BasePoints):
         prev_size = self.data.n_allocated_nodes
         self._data = self._fix_data(data)
         self._data_changed(prev_size)
+
+    @property
+    def edges_visible(self):
+        return self._edges_visible
+
+    @edges_visible.setter
+    def edges_visible(self, value):
+        self._edges_visible = value
+        self.events.edges_visible(value=value)
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
