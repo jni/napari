@@ -9,6 +9,7 @@ have a "pos" attribute with the node coordinate.
 """
 
 import networkx as nx
+import numpy as np
 
 import napari
 
@@ -18,6 +19,7 @@ hex_grid_ints = nx.convert_node_labels_to_integers(hex_grid)
 
 viewer = napari.Viewer()
 layer = viewer.add_graph(hex_grid_ints, size=1)
+layer.edges_visible = np.random.random(len(hex_grid_ints.edges)) > 0.5
 
 if __name__ == "__main__":
     napari.run()
