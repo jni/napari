@@ -69,8 +69,21 @@ def get_scale_translate(dataset, array_name, invert_lat=False):
     return {'scale': scale, 'translate': translate}
 
 
-an = xr.open_mfdataset(sorted(glob(str(root_dir / 'an/*spec_hum.nc'))))
+# open the model dataset
 ds = xr.open_dataset(root_dir / 'spec_hum.nc', chunks={'time': 1})
+
+# Show the raw (not resampled) model data
+viewer, model_layer = napari.imshow(
+    ds.spec_hum,
+    name='model',
+    **get_scale_translate(ds, 'spec_hum', invert_lat=True),
+)
+viewer.dims.axis_labels = ds.spec_hum.dims
+
+# open the measurement data
+an = xr.open_mfdataset(sorted(glob(str(root_dir / 'an/*spec_hum.nc'))))
+
+# resample the model data to have even spacing in time
 start, stop, step = [
         np.array(elem)[()]
         for elem in (ds.time[0], ds.time[-1], ds.time[1] - ds.time[0])
@@ -79,21 +92,25 @@ ds_reg = ds.interp(
         coords={'time': np.arange(start, stop, step)},
         method='nearest',
         )
+an = xr.open_mfdataset(sorted(glob(str(root_dir / 'an/*spec_hum.nc'))))
 
-viewer = napari.Viewer()
-model = viewer.add_image(
-        ds_reg.spec_hum,
-        name='model',
-        **get_scale_translate(ds_reg, 'spec_hum', invert_lat=True),
-        colormap='magenta',
-        )
-gt = viewer.add_image(
-        an.spec_hum,
-        name='measurement',
-        **get_scale_translate(an, 'spec_hum', invert_lat=True),
-        colormap='green',
-        blending='additive',
-        )
+# show the resampled model data overlaid on the measurement data
+# note: this has performance issues due to the live resampling.
+viewer2 = napari.Viewer()
+model = viewer2.add_image(
+    ds_reg.spec_hum,
+    name='model',
+    **get_scale_translate(ds_reg, 'spec_hum', invert_lat=True),
+    colormap='magenta',
+)
+gt = viewer2.add_image(
+    an.spec_hum,
+    name='measurement',
+    **get_scale_translate(an, 'spec_hum', invert_lat=True),
+    colormap='green',
+    blending='additive',
+)
+viewer2.dims.axis_labels = ds_reg.spec_hum.dims
 
 if __name__ == '__main__':
     napari.run()
