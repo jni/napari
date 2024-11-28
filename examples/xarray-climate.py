@@ -92,7 +92,6 @@ ds_reg = ds.interp(
         coords={'time': np.arange(start, stop, step)},
         method='nearest',
         )
-an = xr.open_mfdataset(sorted(glob(str(root_dir / 'an/*spec_hum.nc'))))
 
 # show the resampled model data overlaid on the measurement data
 # note: this has performance issues due to the live resampling.
