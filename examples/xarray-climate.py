@@ -50,7 +50,11 @@ def get_scale_translate(dataset, array_name, invert_lat=False):
         coordinates displayed by the viewer on hover will show northern
         latitudes as negative. The true fix is to add a transformation
         between the world/scene coordinates and the canvas in the napari code
-        base, but that might take some time.
+        base, but that might take some time. An alternative for now is to use
+        private APIs to find the VisPy camera and change its orientation, like
+        so:
+
+        viewer.window._qt_window._qt_viewer.canvas.camera._2D_camera.flip = (0, 0, 0)
     """
     array = getattr(dataset, array_name)
     if array is None:
@@ -74,11 +78,14 @@ ds = xr.open_dataset(root_dir / 'spec_hum.nc', chunks={'time': 1})
 
 # Show the raw (not resampled) model data
 viewer, model_layer = napari.imshow(
-    ds.spec_hum,
-    name='model',
-    **get_scale_translate(ds, 'spec_hum', invert_lat=True),
-)
+        ds.spec_hum,
+        name='model',
+        **get_scale_translate(ds, 'spec_hum'),
+        )
 viewer.dims.axis_labels = ds.spec_hum.dims
+# currently no private API to flip the camera, so increasing y is up,
+# so we use these private attributes.
+viewer.window._qt_window._qt_viewer.canvas.camera._2D_camera.flip = (0, 0, 0)
 
 # open the measurement data
 an = xr.open_mfdataset(sorted(glob(str(root_dir / 'an/*spec_hum.nc'))))
@@ -97,19 +104,22 @@ ds_reg = ds.interp(
 # note: this has performance issues due to the live resampling.
 viewer2 = napari.Viewer()
 model = viewer2.add_image(
-    ds_reg.spec_hum,
-    name='model',
-    **get_scale_translate(ds_reg, 'spec_hum', invert_lat=True),
-    colormap='magenta',
-)
+        ds_reg.spec_hum,
+        name='model',
+        **get_scale_translate(ds_reg, 'spec_hum'),
+        colormap='magenta',
+        )
 gt = viewer2.add_image(
-    an.spec_hum,
-    name='measurement',
-    **get_scale_translate(an, 'spec_hum', invert_lat=True),
-    colormap='green',
-    blending='additive',
-)
+        an.spec_hum,
+        name='measurement',
+        **get_scale_translate(an, 'spec_hum'),
+        colormap='green',
+        blending='additive',
+        )
 viewer2.dims.axis_labels = ds_reg.spec_hum.dims
+# currently no private API to flip the camera, so increasing y is up,
+# so we use these private attributes.
+viewer2.window._qt_window._qt_viewer.canvas.camera._2D_camera.flip = (0, 0, 0)
 
 if __name__ == '__main__':
     napari.run()
