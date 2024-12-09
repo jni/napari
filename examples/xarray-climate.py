@@ -101,6 +101,7 @@ start, stop, step = [
 ds_reg = ds.interp(
         coords={'time': np.arange(start, stop, step)},
         method='nearest',
+        assume_sorted=True,
         )
 
 # show the resampled model data overlaid on the measurement data
