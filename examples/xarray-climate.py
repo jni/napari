@@ -76,7 +76,8 @@ def get_scale_translate(dataset, array_name, invert_lat=False):
 # open the model dataset
 ds = xr.open_dataset(
         root_dir / 'spec_hum.nc',
-        chunks={'time': 1, 'theta_lvl': 1},
+        # chunks are currently extremely inefficient
+        # chunks={'time': 1, 'theta_lvl': 1},
         )
 
 # Show the raw (not resampled) model data
