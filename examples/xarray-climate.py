@@ -26,7 +26,7 @@ import napari
 
 root_dir = Path('/Users/jni/data/thredds/20241104')
 
-def get_scale_translate(dataset, array_name, invert_lat=False):
+def get_scale_translate(dataset, array_name):
     """Get the translate/offset and scale parameters for an xarray dataset.
 
     This code assumes that the dataset is regularly spaced. You should
@@ -39,22 +39,6 @@ def get_scale_translate(dataset, array_name, invert_lat=False):
     array_name : str
         The name of the xarray DataArray within `dataset` to be displayed in
         napari.
-    invert_lat : bool
-        Whether to invert the latitude values.
-
-        napari's axes follow zyx convention, with y pointing down.
-
-        latitude decreases going down conventionally (putting North at the top
-        and having southern latitudes be negative), so here we multiply by -1
-        to display the globe conventionally. Unfortunately, this means the
-        coordinates displayed by the viewer on hover will show northern
-        latitudes as negative. The true fix is to add a transformation
-        between the world/scene coordinates and the canvas in the napari code
-        base, but that might take some time. An alternative for now is to use
-        private APIs to find the VisPy camera and change its orientation, like
-        so:
-
-        viewer.window._qt_window._qt_viewer.canvas.camera._2D_camera.flip = (0, 0, 0)
     """
     array = getattr(dataset, array_name)
     if array is None:
@@ -62,14 +46,6 @@ def get_scale_translate(dataset, array_name, invert_lat=False):
     dims = [getattr(dataset, dim) for dim in array.dims]
     translate = [float(d[0]) for d in dims]
     scale = [float(d[1] - d[0]) for d in dims]
-    if invert_lat:
-        lat_pos, lat_name = next(
-                (i, dim)
-                for i, dim in enumerate(array.dims)
-                if dim.startswith('lat')
-                )
-        scale[lat_pos] *= -1
-        translate[lat_pos] = float(getattr(dataset, lat_name)[-1])
     return {'scale': scale, 'translate': translate}
 
 
