@@ -87,9 +87,7 @@ viewer, model_layer = napari.imshow(
         **get_scale_translate(ds, 'spec_hum'),
         )
 viewer.dims.axis_labels = ds.spec_hum.dims
-# currently no private API to flip the camera, so increasing y is up,
-# so we use these private attributes.
-viewer.window._qt_window._qt_viewer.canvas.camera._2D_camera.flip = (0, 0, 0)
+viewer.camera.orientation2d = ('up', 'right')
 
 # open the measurement data
 an = xr.open_mfdataset(sorted(glob(str(root_dir / 'an/*spec_hum.nc'))))
@@ -122,9 +120,7 @@ gt = viewer2.add_image(
         blending='additive',
         )
 viewer2.dims.axis_labels = ds_reg.spec_hum.dims
-# currently no private API to flip the camera, so increasing y is up,
-# so we use these private attributes.
-viewer2.window._qt_window._qt_viewer.canvas.camera._2D_camera.flip = (0, 0, 0)
+viewer2.camera.orientation2d = ('up', 'right')
 
 if __name__ == '__main__':
     napari.run()
