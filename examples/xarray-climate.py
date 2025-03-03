@@ -50,11 +50,7 @@ def get_scale_translate(dataset, array_name):
 
 
 # open the model dataset
-ds = xr.open_dataset(
-        root_dir / 'spec_hum.nc',
-        # chunks are currently extremely inefficient
-        # chunks={'time': 1, 'theta_lvl': 1},
-        )
+ds = xr.open_zarr(root_dir / 'spec_hum_reg.zarr')
 
 # Show the raw (not resampled) model data
 viewer, model_layer = napari.imshow(
@@ -63,6 +59,9 @@ viewer, model_layer = napari.imshow(
         **get_scale_translate(ds, 'spec_hum'),
         )
 viewer.dims.axis_labels = ds.spec_hum.dims
+
+# latitude goes from -90 (south, down) to 90 (north, up),
+# so we make sure that axis 0 points up.
 viewer.camera.orientation2d = ('up', 'right')
 
 # open the measurement data
