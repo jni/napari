@@ -1,4 +1,4 @@
-"""Integration tests for ray_tracing_resolution with screenshot comparisons."""
+"""Integration tests for ray_tracing_step_size with screenshot comparisons."""
 
 import numpy as np
 import pytest
@@ -7,8 +7,8 @@ from napari._tests.utils import skip_on_win_ci
 
 
 @skip_on_win_ci
-def test_image_ray_tracing_resolution_visual(make_napari_viewer, qtbot):
-    """Test that changing ray_tracing_resolution produces different edge quality."""
+def test_image_ray_tracing_step_size_visual(make_napari_viewer, qtbot):
+    """Test that changing ray_tracing_step_size produces different edge quality."""
     viewer = make_napari_viewer(ndisplay=3, show=True)
 
     # Create sparse test data that exhibits jagged edge artifacts
@@ -59,7 +59,7 @@ def test_image_ray_tracing_resolution_visual(make_napari_viewer, qtbot):
         name='sparse_volume',
         colormap='gray',
         rendering='mip',
-        ray_tracing_resolution=0.8,  # Default - produces jagged edges
+        ray_tracing_step_size=0.8,  # Default - produces jagged edges
         contrast_limits=[0, 1],
         interpolation3d='nearest',  # Important for seeing artifacts
     )
@@ -91,7 +91,7 @@ def test_image_ray_tracing_resolution_visual(make_napari_viewer, qtbot):
     edge_count_default = np.sum(edges_default)
 
     # Now change to high quality (smooth edges)
-    layer.ray_tracing_resolution = 0.01  # High quality - smooth edges
+    layer.ray_tracing_step_size = 0.01  # High quality - smooth edges
 
     # Process events and take screenshot
     qtbot.wait(100)
@@ -119,8 +119,8 @@ def test_image_ray_tracing_resolution_visual(make_napari_viewer, qtbot):
 
 
 @skip_on_win_ci
-def test_labels_ray_tracing_resolution_visual(make_napari_viewer, qtbot):
-    """Test that changing ray_tracing_resolution produces different edge quality for labels."""
+def test_labels_ray_tracing_step_size_visual(make_napari_viewer, qtbot):
+    """Test that changing ray_tracing_step_size produces different edge quality for labels."""
     viewer = make_napari_viewer(ndisplay=3, show=True)
 
     # Create a small cube volume with a single label
@@ -131,7 +131,7 @@ def test_labels_ray_tracing_resolution_visual(make_napari_viewer, qtbot):
         labels_cube,
         name='labeled_cube',
         rendering='iso_categorical',
-        ray_tracing_resolution=4.0,  # Low quality - jagged isosurface
+        ray_tracing_step_size=4.0,  # Low quality - jagged isosurface
     )
 
     # Set camera for 3/4 perspective view
@@ -153,7 +153,7 @@ def test_labels_ray_tracing_resolution_visual(make_napari_viewer, qtbot):
     edge_count_low = np.sum(edges_low)
 
     # Change to high quality
-    layer.ray_tracing_resolution = 0.01  # High quality - smooth isosurface
+    layer.ray_tracing_step_size = 0.01  # High quality - smooth isosurface
 
     # Process events and take screenshot
     qtbot.wait(100)
@@ -183,20 +183,20 @@ def test_labels_ray_tracing_resolution_visual(make_napari_viewer, qtbot):
 
 @skip_on_win_ci
 def test_multiple_layers_different_resolutions(make_napari_viewer, qtbot):
-    """Test that multiple layers can have different ray_tracing_resolution values."""
+    """Test that multiple layers can have different ray_tracing_step_size values."""
     viewer = make_napari_viewer(ndisplay=3, show=True)
 
     # Create two small cube volumes
     cube1 = np.ones((5, 5, 5), dtype=float)
     cube2 = np.ones((5, 5, 5), dtype=float) * 0.5
 
-    # Add layers with different ray_tracing_resolution
+    # Add layers with different ray_tracing_step_size
     layer1 = viewer.add_image(
         cube1,
         name='cube1',
         colormap='viridis',
         rendering='mip',
-        ray_tracing_resolution=0.1,  # High quality
+        ray_tracing_step_size=0.1,  # High quality
         translate=[0, 0, 0],
     )
 
@@ -205,7 +205,7 @@ def test_multiple_layers_different_resolutions(make_napari_viewer, qtbot):
         name='cube2',
         colormap='magma',
         rendering='mip',
-        ray_tracing_resolution=4.0,  # Low quality
+        ray_tracing_step_size=4.0,  # Low quality
         translate=[6, 0, 0],  # Offset to see both cubes
     )
 
@@ -226,8 +226,8 @@ def test_multiple_layers_different_resolutions(make_napari_viewer, qtbot):
     assert vispy_layer2.node.relative_step_size == 4.0
 
     # Now swap the resolution values
-    layer1.ray_tracing_resolution = 4.0
-    layer2.ray_tracing_resolution = 0.1
+    layer1.ray_tracing_step_size = 4.0
+    layer2.ray_tracing_step_size = 0.1
 
     # Process events
     qtbot.wait(50)
@@ -237,13 +237,13 @@ def test_multiple_layers_different_resolutions(make_napari_viewer, qtbot):
     assert vispy_layer2.node.relative_step_size == 0.1
 
     # Verify that both layers maintained their individual settings
-    assert layer1.ray_tracing_resolution == 4.0
-    assert layer2.ray_tracing_resolution == 0.1
+    assert layer1.ray_tracing_step_size == 4.0
+    assert layer2.ray_tracing_step_size == 0.1
 
 
 @skip_on_win_ci
 def test_ray_tracing_slider_interaction(make_napari_viewer, qtbot):
-    """Test that the Qt slider properly updates ray_tracing_resolution."""
+    """Test that the Qt slider properly updates ray_tracing_step_size."""
     viewer = make_napari_viewer(ndisplay=3)
 
     # Create a 3D volume
@@ -252,7 +252,7 @@ def test_ray_tracing_slider_interaction(make_napari_viewer, qtbot):
         data,
         name='test_volume',
         rendering='mip',
-        ray_tracing_resolution=0.8,  # Default value
+        ray_tracing_step_size=0.8,  # Default value
     )
 
     # Get the layer controls
@@ -260,22 +260,22 @@ def test_ray_tracing_slider_interaction(make_napari_viewer, qtbot):
     ray_tracing_control = controls._ray_tracing_control
 
     # Check initial state
-    assert layer.ray_tracing_resolution == 0.8
+    assert layer.ray_tracing_step_size == 0.8
     # Slider should be at index 4 (0.8 is at index 4 in PRESET_VALUES)
     assert ray_tracing_control.ray_tracing_slider.value() == 4
 
     # Move slider to a different preset
     ray_tracing_control.ray_tracing_slider.setValue(0)  # 0.0001
     qtbot.wait(50)
-    assert layer.ray_tracing_resolution == 0.0001
+    assert layer.ray_tracing_step_size == 0.0001
 
     # Move to another preset
     ray_tracing_control.ray_tracing_slider.setValue(10)  # 32.0
     qtbot.wait(50)
-    assert layer.ray_tracing_resolution == 32.0
+    assert layer.ray_tracing_step_size == 32.0
 
     # Test that programmatic layer changes update the slider
-    layer.ray_tracing_resolution = 2.0
+    layer.ray_tracing_step_size = 2.0
     qtbot.wait(50)
     assert ray_tracing_control.ray_tracing_slider.value() == 6  # Index of 2.0
 
@@ -283,7 +283,7 @@ def test_ray_tracing_slider_interaction(make_napari_viewer, qtbot):
     ray_tracing_control.ray_tracing_slider._label.setText('0.5')
     ray_tracing_control._on_label_edited()
     qtbot.wait(50)
-    assert layer.ray_tracing_resolution == 0.5
+    assert layer.ray_tracing_step_size == 0.5
 
     # Slider should snap to nearest preset but label keeps custom value
     assert '0.5' in ray_tracing_control.ray_tracing_slider._label.text()
@@ -294,7 +294,7 @@ def test_ray_tracing_slider_interaction(make_napari_viewer, qtbot):
 )
 @skip_on_win_ci
 def test_ray_tracing_2d_3d_visibility(make_napari_viewer, qtbot):
-    """Test that ray_tracing_resolution slider is only visible in 3D mode."""
+    """Test that ray_tracing_step_size slider is only visible in 3D mode."""
     from qtpy.QtWidgets import QApplication
 
     viewer = make_napari_viewer(ndisplay=2)  # Start in 2D
@@ -331,39 +331,39 @@ def test_ray_tracing_2d_3d_visibility(make_napari_viewer, qtbot):
 
 
 def test_viewer_add_image_ray_tracing(make_napari_viewer):
-    """Test that viewer.add_image properly accepts ray_tracing_resolution."""
+    """Test that viewer.add_image properly accepts ray_tracing_step_size."""
     viewer = make_napari_viewer()
 
     # Test with default value
     data1 = np.random.random((10, 10, 10))
     layer1 = viewer.add_image(data1)
-    assert layer1.ray_tracing_resolution == 0.8  # Default
+    assert layer1.ray_tracing_step_size == 0.8  # Default
 
     # Test with custom value
     data2 = np.random.random((10, 10, 10))
-    layer2 = viewer.add_image(data2, ray_tracing_resolution=0.01)
-    assert layer2.ray_tracing_resolution == 0.01
+    layer2 = viewer.add_image(data2, ray_tracing_step_size=0.01)
+    assert layer2.ray_tracing_step_size == 0.01
 
     # Test with channel_axis
     multichannel = np.random.random((3, 10, 10, 10))
     layers = viewer.add_image(
-        multichannel, channel_axis=0, ray_tracing_resolution=2.0
+        multichannel, channel_axis=0, ray_tracing_step_size=2.0
     )
     assert len(layers) == 3
     for layer in layers:
-        assert layer.ray_tracing_resolution == 2.0
+        assert layer.ray_tracing_step_size == 2.0
 
 
 def test_viewer_add_labels_ray_tracing(make_napari_viewer):
-    """Test that viewer.add_labels properly accepts ray_tracing_resolution."""
+    """Test that viewer.add_labels properly accepts ray_tracing_step_size."""
     viewer = make_napari_viewer()
 
     # Test with default value
     data1 = np.random.randint(0, 10, (10, 10, 10), dtype=np.uint8)
     layer1 = viewer.add_labels(data1)
-    assert layer1.ray_tracing_resolution == 0.8  # Default
+    assert layer1.ray_tracing_step_size == 0.8  # Default
 
     # Test with custom value
     data2 = np.random.randint(0, 10, (10, 10, 10), dtype=np.uint8)
-    layer2 = viewer.add_labels(data2, ray_tracing_resolution=16.0)
-    assert layer2.ray_tracing_resolution == 16.0
+    layer2 = viewer.add_labels(data2, ray_tracing_step_size=16.0)
+    assert layer2.ray_tracing_step_size == 16.0

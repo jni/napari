@@ -116,7 +116,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     projection_mode : str
         How data outside the viewed dimensions, but inside the thick Dims slice will
         be projected onto the viewed dimensions. Must fit to ImageProjectionMode
-    ray_tracing_resolution : float
+    ray_tracing_step_size : float
         Ray tracing step size factor for 3D volume rendering.
         Lower values improve quality but are slower. Must be positive.
         Typical values range from 0.1 (high quality, slow) to 4.0 (low quality, fast).
@@ -251,7 +251,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         opacity=1.0,
         plane=None,
         projection_mode='mean',
-        ray_tracing_resolution=0.8,
+        ray_tracing_step_size=0.8,
         rendering='mip',
         rgb=None,
         rotate=None,
@@ -306,8 +306,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.interpolation2d = interpolation2d
         self.interpolation3d = interpolation3d
         self._attenuation = attenuation
-        self.ray_tracing_resolution = (
-            ray_tracing_resolution  # Use property setter for validation
+        self.ray_tracing_step_size = (
+            ray_tracing_step_size  # Use property setter for validation
         )
 
         # Set contrast limits, colormaps and plane parameters
@@ -370,20 +370,20 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.events.rendering()
 
     @property
-    def ray_tracing_resolution(self):
+    def ray_tracing_step_size(self):
         """float: Ray tracing step size factor for 3D volume rendering.
 
         Lower values improve quality but are slower. Must be positive.
         Typical values range from 0.1 (high quality, slow) to 4.0 (low quality, fast).
         """
-        return self._ray_tracing_resolution
+        return self._ray_tracing_step_size
 
-    @ray_tracing_resolution.setter
-    def ray_tracing_resolution(self, value):
+    @ray_tracing_step_size.setter
+    def ray_tracing_step_size(self, value):
         if value <= 0:
-            raise ValueError('ray_tracing_resolution must be positive')
-        self._ray_tracing_resolution = float(value)
-        self.events.ray_tracing_resolution()
+            raise ValueError('ray_tracing_step_size must be positive')
+        self._ray_tracing_step_size = float(value)
+        self.events.ray_tracing_step_size()
 
     def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
@@ -408,7 +408,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
-                'ray_tracing_resolution': self.ray_tracing_resolution,
+                'ray_tracing_step_size': self.ray_tracing_step_size,
                 'data': self.data,
                 'custom_interpolation_kernel_2d': self.custom_interpolation_kernel_2d,
             }

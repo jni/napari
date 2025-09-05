@@ -59,24 +59,24 @@ def test_qt_ray_tracing_slider_preset_values(qtbot):
 def test_qt_ray_tracing_slider_discrete_movement(qtbot):
     """Test that slider moves between discrete preset values."""
     data = np.random.random((10, 10, 10))
-    layer = Image(data, ray_tracing_resolution=0.8)
+    layer = Image(data, ray_tracing_step_size=0.8)
     control = QtRayTracingSliderControl(None, layer)
     qtbot.addWidget(control.ray_tracing_slider)
     qtbot.addWidget(control.ray_tracing_slider_label)
 
     # Initial value should be at index 4 (0.8)
     assert control.ray_tracing_slider.value() == 4
-    assert layer.ray_tracing_resolution == 0.8
+    assert layer.ray_tracing_step_size == 0.8
 
     # Move slider to different positions
     control.ray_tracing_slider.setValue(0)  # Should set to 0.0001
-    assert layer.ray_tracing_resolution == 0.0001
+    assert layer.ray_tracing_step_size == 0.0001
 
     control.ray_tracing_slider.setValue(6)  # Should set to 2.0
-    assert layer.ray_tracing_resolution == 2.0
+    assert layer.ray_tracing_step_size == 2.0
 
     control.ray_tracing_slider.setValue(10)  # Should set to 32.0
-    assert layer.ray_tracing_resolution == 32.0
+    assert layer.ray_tracing_step_size == 32.0
 
 
 def test_qt_ray_tracing_slider_label_display(qtbot):
@@ -114,7 +114,7 @@ def test_qt_ray_tracing_slider_label_editing(qtbot):
     control._on_label_edited()
 
     # Layer should have the custom value
-    assert layer.ray_tracing_resolution == 0.5
+    assert layer.ray_tracing_step_size == 0.5
 
     # Slider should snap to nearest preset (index 3 = 0.1 or index 4 = 0.8)
     # Based on logarithmic distance, 0.5 is closer to 0.8
@@ -127,33 +127,33 @@ def test_qt_ray_tracing_slider_label_editing(qtbot):
 def test_qt_ray_tracing_slider_invalid_label_input(qtbot):
     """Test that invalid label input is handled correctly."""
     data = np.random.random((10, 10, 10))
-    layer = Image(data, ray_tracing_resolution=1.0)
+    layer = Image(data, ray_tracing_step_size=1.0)
     control = QtRayTracingSliderControl(None, layer)
     qtbot.addWidget(control.ray_tracing_slider)
     qtbot.addWidget(control.ray_tracing_slider_label)
 
-    original_value = layer.ray_tracing_resolution
+    original_value = layer.ray_tracing_step_size
 
     # Try entering invalid text
     control.ray_tracing_slider._label.setText('invalid')
     control._on_label_edited()
 
     # Value should not change
-    assert layer.ray_tracing_resolution == original_value
+    assert layer.ray_tracing_step_size == original_value
 
     # Try entering negative value
     control.ray_tracing_slider._label.setText('-1.0')
     control._on_label_edited()
 
     # Value should not change
-    assert layer.ray_tracing_resolution == original_value
+    assert layer.ray_tracing_step_size == original_value
 
     # Try entering zero
     control.ray_tracing_slider._label.setText('0')
     control._on_label_edited()
 
     # Value should not change
-    assert layer.ray_tracing_resolution == original_value
+    assert layer.ray_tracing_step_size == original_value
 
 
 def test_qt_ray_tracing_slider_layer_sync(qtbot):
@@ -165,13 +165,13 @@ def test_qt_ray_tracing_slider_layer_sync(qtbot):
     qtbot.addWidget(control.ray_tracing_slider_label)
 
     # Change layer value programmatically
-    layer.ray_tracing_resolution = 0.001
+    layer.ray_tracing_step_size = 0.001
 
     # Slider should update to nearest preset index (1)
     assert control.ray_tracing_slider.value() == 1
 
     # Change to a custom value
-    layer.ray_tracing_resolution = 0.3
+    layer.ray_tracing_step_size = 0.3
 
     # Slider should snap to nearest (probably index 3 or 4)
     # But label should show the actual value

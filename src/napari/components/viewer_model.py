@@ -947,7 +947,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         opacity=1.0,
         plane=None,
         projection_mode='mean',
-        ray_tracing_resolution=0.8,
+        ray_tracing_step_size=0.8,
         rendering='mip',
         rgb=None,
         rotate=None,
@@ -1123,7 +1123,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
             'projection_mode': projection_mode,
-            'ray_tracing_resolution': ray_tracing_resolution,
+            'ray_tracing_step_size': ray_tracing_step_size,
             'units': units,
         }
 

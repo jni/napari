@@ -52,8 +52,8 @@ class QtRayTracingSliderControl(QtWidgetControlsBase):
     def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
-        self._layer.events.ray_tracing_resolution.connect(
-            self._on_ray_tracing_resolution_change
+        self._layer.events.ray_tracing_step_size.connect(
+            self._on_ray_tracing_step_size_change
         )
 
         # Setup widgets - use QLabeledDoubleSlider but configure it for discrete values
@@ -67,7 +67,7 @@ class QtRayTracingSliderControl(QtWidgetControlsBase):
         sld.setDecimals(0)  # Show as integer indices
 
         # Find the closest preset index for the current value
-        current_value = self._layer.ray_tracing_resolution
+        current_value = self._layer.ray_tracing_step_size
         current_index = self._find_closest_preset_index(current_value)
         sld.setValue(current_index)
 
@@ -81,9 +81,7 @@ class QtRayTracingSliderControl(QtWidgetControlsBase):
         sld._label.editingFinished.connect(self._on_label_edited)
 
         self.ray_tracing_slider = sld
-        self.ray_tracing_slider_label = QtWrappedLabel(
-            trans._('ray tracing resolution:')
-        )
+        self.ray_tracing_slider_label = QtWrappedLabel(trans._('step size:'))
 
     def _find_closest_preset_index(self, value: float) -> int:
         """Find the index of the preset value closest to the given value."""
@@ -115,8 +113,8 @@ class QtRayTracingSliderControl(QtWidgetControlsBase):
             self._update_slider_label(self.ray_tracing_slider, index)
             # Set the layer value
             new_value = self.PRESET_VALUES[index]
-            if abs(self._layer.ray_tracing_resolution - new_value) > 1e-9:
-                self._layer.ray_tracing_resolution = new_value
+            if abs(self._layer.ray_tracing_step_size - new_value) > 1e-9:
+                self._layer.ray_tracing_step_size = new_value
 
     def _on_label_edited(self):
         """Handle direct editing of the label value."""
@@ -128,7 +126,7 @@ class QtRayTracingSliderControl(QtWidgetControlsBase):
             if user_value <= 0:
                 # Invalid value, reset to current
                 current_index = self._find_closest_preset_index(
-                    self._layer.ray_tracing_resolution
+                    self._layer.ray_tracing_step_size
                 )
                 self._update_slider_label(
                     self.ray_tracing_slider, current_index
@@ -136,7 +134,7 @@ class QtRayTracingSliderControl(QtWidgetControlsBase):
                 return
 
             # Set the layer value directly (user can enter any positive value)
-            self._layer.ray_tracing_resolution = user_value
+            self._layer.ray_tracing_step_size = user_value
 
             # Find closest preset and update slider position
             closest_index = self._find_closest_preset_index(user_value)
@@ -147,14 +145,14 @@ class QtRayTracingSliderControl(QtWidgetControlsBase):
         except (ValueError, AttributeError):
             # Invalid input, reset to current value
             current_index = self._find_closest_preset_index(
-                self._layer.ray_tracing_resolution
+                self._layer.ray_tracing_step_size
             )
             self._update_slider_label(self.ray_tracing_slider, current_index)
 
-    def _on_ray_tracing_resolution_change(self):
-        """Receive the layer model ray_tracing_resolution change event and update the slider."""
+    def _on_ray_tracing_step_size_change(self):
+        """Receive the layer model ray_tracing_step_size change event and update the slider."""
         with qt_signals_blocked(self.ray_tracing_slider):
-            current_value = self._layer.ray_tracing_resolution
+            current_value = self._layer.ray_tracing_step_size
             # Find closest preset index
             closest_index = self._find_closest_preset_index(current_value)
             self.ray_tracing_slider.setValue(closest_index)

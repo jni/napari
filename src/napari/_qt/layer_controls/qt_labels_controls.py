@@ -13,6 +13,9 @@ from napari._qt.layer_controls.widgets._labels import (
     QtNdimSpinBoxControl,
     QtPreserveLabelsCheckBoxControl,
 )
+from napari._qt.layer_controls.widgets.qt_3d_rendering_section import (
+    Qt3DRenderingSection,
+)
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.labels._labels_constants import Mode
@@ -140,10 +143,22 @@ class QtLabelsControls(QtLayerControls):
         self._add_widget_controls(self._label_control)
         self._brush_size_slider_control = QtBrushSizeSliderControl(self, layer)
         self._add_widget_controls(self._brush_size_slider_control)
+
+        # Create 3D rendering section
+        self._3d_rendering_section = Qt3DRenderingSection(self)
+
+        # Create 3D-specific controls
         self._render_control = QtLabelRenderControl(self, layer)
-        self._add_widget_controls(self._render_control)
         self._ray_tracing_control = QtRayTracingSliderControl(self, layer)
-        self._add_widget_controls(self._ray_tracing_control)
+
+        # Add 3D controls to the 3D rendering section
+        for label, control in self._render_control.get_widget_controls():
+            self._3d_rendering_section.add_control(label, control)
+        for label, control in self._ray_tracing_control.get_widget_controls():
+            self._3d_rendering_section.add_control(label, control)
+
+        # Add the section widget to the main layout
+        self.layout().addWidget(self._3d_rendering_section)
         self._colormode_combobox_control = QtColorModeComboBoxControl(
             self, layer
         )
@@ -196,11 +211,9 @@ class QtLabelsControls(QtLayerControls):
     def _on_ndisplay_changed(self):
         show_3d_widgets = self.ndisplay == 3
         if show_3d_widgets:
-            self._render_control._on_display_change_show()
-            self._ray_tracing_control._on_display_change_show()
+            self._3d_rendering_section.show_section()
         else:
-            self._render_control._on_display_change_hide()
-            self._ray_tracing_control._on_display_change_hide()
+            self._3d_rendering_section.hide_section()
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()

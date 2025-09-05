@@ -320,7 +320,7 @@ class Labels(ScalarFieldBase):
         plane=None,
         projection_mode='none',
         properties=None,
-        ray_tracing_resolution=0.8,
+        ray_tracing_step_size=0.8,
         rendering='iso_categorical',
         rotate=None,
         scale=None,
@@ -405,8 +405,8 @@ class Labels(ScalarFieldBase):
         self._brush_size = 10
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
-        self.ray_tracing_resolution = (
-            ray_tracing_resolution  # Use property setter for validation
+        self.ray_tracing_step_size = (
+            ray_tracing_step_size  # Use property setter for validation
         )
 
         self._selected_label = 1
@@ -460,20 +460,20 @@ class Labels(ScalarFieldBase):
         self.events.rendering()
 
     @property
-    def ray_tracing_resolution(self):
+    def ray_tracing_step_size(self):
         """float: Ray tracing step size factor for 3D volume rendering.
 
         Lower values improve quality but are slower. Must be positive.
         Typical values range from 0.1 (high quality, slow) to 4.0 (low quality, fast).
         """
-        return self._ray_tracing_resolution
+        return self._ray_tracing_step_size
 
-    @ray_tracing_resolution.setter
-    def ray_tracing_resolution(self, value):
+    @ray_tracing_step_size.setter
+    def ray_tracing_step_size(self, value):
         if value <= 0:
-            raise ValueError('ray_tracing_resolution must be positive')
-        self._ray_tracing_resolution = float(value)
-        self.events.ray_tracing_resolution()
+            raise ValueError('ray_tracing_step_size must be positive')
+        self._ray_tracing_step_size = float(value)
+        self.events.ray_tracing_step_size()
 
     @property
     def iso_gradient_mode(self) -> str:

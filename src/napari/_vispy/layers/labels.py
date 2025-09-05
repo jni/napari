@@ -209,16 +209,16 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         self.layer.events.iso_gradient_mode.connect(
             self._on_iso_gradient_mode_change
         )
-        self.layer.events.ray_tracing_resolution.connect(
-            self._on_ray_tracing_resolution_change
+        self.layer.events.ray_tracing_step_size.connect(
+            self._on_ray_tracing_step_size_change
         )
         self.layer.events.data.connect(self._on_colormap_change)
         # as we generate colormap texture based on the data type, we need to
         # update it when the data type changes
 
-    def _on_ray_tracing_resolution_change(self) -> None:
+    def _on_ray_tracing_step_size_change(self) -> None:
         if isinstance(self.node, VolumeNode):
-            self.node.relative_step_size = self.layer.ray_tracing_resolution
+            self.node.relative_step_size = self.layer.ray_tracing_step_size
 
     def _on_rendering_change(self):
         # overriding the Image method, so we can maintain the same old rendering name
@@ -326,7 +326,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         super().reset()
         self._on_colormap_change()
         self._on_iso_gradient_mode_change()
-        self._on_ray_tracing_resolution_change()
+        self._on_ray_tracing_step_size_change()
 
 
 class LabelLayerNode(ScalarFieldLayerNode):

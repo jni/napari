@@ -1,4 +1,4 @@
-"""Tests for ray_tracing_resolution integration with VisPy visuals."""
+"""Tests for ray_tracing_step_size integration with VisPy visuals."""
 
 import numpy as np
 
@@ -9,10 +9,10 @@ from napari.layers import Image, Labels
 
 
 def test_vispy_image_layer_ray_tracing_connection():
-    """Test that ray_tracing_resolution connects to VolumeNode in Image layer."""
+    """Test that ray_tracing_step_size connects to VolumeNode in Image layer."""
     # Create 3D data to ensure VolumeNode is used
     data = np.random.random((10, 10, 10))
-    layer = Image(data, ray_tracing_resolution=0.5)
+    layer = Image(data, ray_tracing_step_size=0.5)
 
     # Create VisPy layer
     vispy_layer = VispyImageLayer(layer)
@@ -38,17 +38,17 @@ def test_vispy_image_layer_ray_tracing_connection():
     assert node.relative_step_size == 0.5
 
     # Change the layer value
-    layer.ray_tracing_resolution = 2.0
+    layer.ray_tracing_step_size = 2.0
 
     # VolumeNode should update
     assert node.relative_step_size == 2.0
 
 
 def test_vispy_labels_layer_ray_tracing_connection():
-    """Test that ray_tracing_resolution connects to VolumeNode in Labels layer."""
+    """Test that ray_tracing_step_size connects to VolumeNode in Labels layer."""
     # Create 3D data to ensure VolumeNode is used
     data = np.random.randint(0, 10, (10, 10, 10), dtype=np.uint8)
-    layer = Labels(data, ray_tracing_resolution=1.5)
+    layer = Labels(data, ray_tracing_step_size=1.5)
 
     # Create VisPy layer
     vispy_layer = VispyLabelsLayer(layer)
@@ -74,14 +74,14 @@ def test_vispy_labels_layer_ray_tracing_connection():
     assert node.relative_step_size == 1.5
 
     # Change the layer value
-    layer.ray_tracing_resolution = 0.1
+    layer.ray_tracing_step_size = 0.1
 
     # VolumeNode should update
     assert node.relative_step_size == 0.1
 
 
 def test_vispy_ray_tracing_event_connection():
-    """Test that ray_tracing_resolution events are properly connected."""
+    """Test that ray_tracing_step_size events are properly connected."""
     # Create 3D data
     data = np.random.random((10, 10, 10))
     layer = Image(data)
@@ -89,7 +89,7 @@ def test_vispy_ray_tracing_event_connection():
     vispy_layer = VispyImageLayer(layer)
 
     # Check that event is connected
-    assert hasattr(layer.events, 'ray_tracing_resolution')
+    assert hasattr(layer.events, 'ray_tracing_step_size')
 
     # Test that changing value triggers update
     event_called = False
@@ -99,21 +99,21 @@ def test_vispy_ray_tracing_event_connection():
         event_called = True
 
     # Replace the handler temporarily
-    original_handler = vispy_layer._on_ray_tracing_resolution_change
-    vispy_layer._on_ray_tracing_resolution_change = mock_handler
+    original_handler = vispy_layer._on_ray_tracing_step_size_change
+    vispy_layer._on_ray_tracing_step_size_change = mock_handler
 
-    layer.ray_tracing_resolution = 0.2
+    layer.ray_tracing_step_size = 0.2
     assert event_called
 
     # Restore original handler
-    vispy_layer._on_ray_tracing_resolution_change = original_handler
+    vispy_layer._on_ray_tracing_step_size_change = original_handler
 
 
 def test_vispy_reset_includes_ray_tracing():
-    """Test that reset() method updates ray_tracing_resolution."""
+    """Test that reset() method updates ray_tracing_step_size."""
     # Create 3D data to ensure VolumeNode is used
     data = np.random.random((10, 10, 10))
-    layer = Image(data, ray_tracing_resolution=0.01)
+    layer = Image(data, ray_tracing_step_size=0.01)
 
     vispy_layer = VispyImageLayer(layer)
 
@@ -129,7 +129,7 @@ def test_vispy_reset_includes_ray_tracing():
     vispy_layer.reset()
 
     # Change the value
-    layer.ray_tracing_resolution = 8.0
+    layer.ray_tracing_step_size = 8.0
 
     # Reset should apply the new value
     vispy_layer.reset()
@@ -142,10 +142,10 @@ def test_vispy_reset_includes_ray_tracing():
 
 
 def test_vispy_2d_mode_no_effect():
-    """Test that ray_tracing_resolution has no effect in 2D mode."""
+    """Test that ray_tracing_step_size has no effect in 2D mode."""
     # Create 2D data
     data = np.random.random((10, 10))
-    layer = Image(data, ray_tracing_resolution=0.1)
+    layer = Image(data, ray_tracing_step_size=0.1)
 
     vispy_layer = VispyImageLayer(layer)
 
@@ -161,17 +161,17 @@ def test_vispy_2d_mode_no_effect():
     )
 
     # Changing value should not cause errors
-    layer.ray_tracing_resolution = 4.0  # Should not raise
+    layer.ray_tracing_step_size = 4.0  # Should not raise
 
 
 def test_vispy_different_values_for_layers():
-    """Test that different layers can have different ray_tracing_resolution values."""
+    """Test that different layers can have different ray_tracing_step_size values."""
     # Create 3D data to ensure VolumeNode is used
     data1 = np.random.random((10, 10, 10))
     data2 = np.random.randint(0, 10, (10, 10, 10), dtype=np.uint8)
 
-    image_layer = Image(data1, ray_tracing_resolution=0.1)
-    labels_layer = Labels(data2, ray_tracing_resolution=4.0)
+    image_layer = Image(data1, ray_tracing_step_size=0.1)
+    labels_layer = Labels(data2, ray_tracing_step_size=4.0)
 
     vispy_image = VispyImageLayer(image_layer)
     vispy_labels = VispyLabelsLayer(labels_layer)
@@ -208,6 +208,6 @@ def test_vispy_different_values_for_layers():
     assert vispy_labels.node.relative_step_size == 4.0
 
     # Changing one should not affect the other
-    image_layer.ray_tracing_resolution = 1.0
+    image_layer.ray_tracing_step_size = 1.0
     assert vispy_image.node.relative_step_size == 1.0
     assert vispy_labels.node.relative_step_size == 4.0  # Unchanged
