@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING
 from napari._qt.layer_controls.qt_image_controls_base import (
     QtBaseImageControls,
 )
-from napari._qt.layer_controls.widgets import QtProjectionModeControl
+from napari._qt.layer_controls.widgets import (
+    QtProjectionModeControl,
+    QtRayTracingSliderControl,
+)
 from napari._qt.layer_controls.widgets._image import (
     QtDepictionControl,
     QtImageRenderControl,
@@ -32,6 +35,8 @@ class QtImageControls(QtBaseImageControls):
         Widget that wraps dropdown menu to select the projection mode for the layer.
     _render_control : napari._qt.layer_controls.widgets._image.QtImageRenderControl
         Widget that wraps widgets related with the method used to render the layer.
+    _ray_tracing_control : napari._qt.layer_controls.widgets.QtRayTracingSliderControl
+        Widget that wraps the ray tracing resolution slider.
     """
 
     layer: 'napari.layers.Image'
@@ -51,6 +56,8 @@ class QtImageControls(QtBaseImageControls):
         self._add_widget_controls(self._depiction_control)
         self._render_control = QtImageRenderControl(self, layer)
         self._add_widget_controls(self._render_control)
+        self._ray_tracing_control = QtRayTracingSliderControl(self, layer)
+        self._add_widget_controls(self._ray_tracing_control)
 
         self._on_ndisplay_changed()
 
@@ -61,7 +68,9 @@ class QtImageControls(QtBaseImageControls):
         if self.ndisplay == 2:
             self._render_control._on_display_change_hide()
             self._depiction_control._on_display_change_hide()
+            self._ray_tracing_control._on_display_change_hide()
         else:
             self._render_control._on_display_change_show()
             self._depiction_control._on_display_change_show()
+            self._ray_tracing_control._on_display_change_show()
         super()._on_ndisplay_changed()

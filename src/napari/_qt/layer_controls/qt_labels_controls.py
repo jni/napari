@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.widgets import QtRayTracingSliderControl
 from napari._qt.layer_controls.widgets._labels import (
     QtBrushSizeSliderControl,
     QtColorModeComboBoxControl,
@@ -141,6 +142,8 @@ class QtLabelsControls(QtLayerControls):
         self._add_widget_controls(self._brush_size_slider_control)
         self._render_control = QtLabelRenderControl(self, layer)
         self._add_widget_controls(self._render_control)
+        self._ray_tracing_control = QtRayTracingSliderControl(self, layer)
+        self._add_widget_controls(self._ray_tracing_control)
         self._colormode_combobox_control = QtColorModeComboBoxControl(
             self, layer
         )
@@ -194,8 +197,10 @@ class QtLabelsControls(QtLayerControls):
         show_3d_widgets = self.ndisplay == 3
         if show_3d_widgets:
             self._render_control._on_display_change_show()
+            self._ray_tracing_control._on_display_change_show()
         else:
             self._render_control._on_display_change_hide()
+            self._ray_tracing_control._on_display_change_hide()
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()

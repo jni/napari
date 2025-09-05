@@ -103,6 +103,9 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
+        self.layer.events.ray_tracing_resolution.connect(
+            self._on_ray_tracing_resolution_change
+        )
 
         # display_change is special (like data_change) because it requires a
         # self.reset(). This means that we have to call it manually. Also,
@@ -172,9 +175,14 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
 
+    def _on_ray_tracing_resolution_change(self) -> None:
+        if isinstance(self.node, VolumeNode):
+            self.node.relative_step_size = self.layer.ray_tracing_resolution
+
     def reset(self, event=None) -> None:
         super().reset()
         self._on_interpolation_change()
         self._on_colormap_change()
         self._on_contrast_limits_change()
         self._on_gamma_change()
+        self._on_ray_tracing_resolution_change()

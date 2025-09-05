@@ -261,6 +261,7 @@ class ScalarFieldBase(Layer, ABC):
             interpolation3d=Event,
             iso_threshold=Event,
             plane=Event,
+            ray_tracing_resolution=Event,
             rendering=Event,
         )
 

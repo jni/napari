@@ -17,6 +17,9 @@ from napari._qt.layer_controls.widgets.qt_out_slice_checkbox import (
 from napari._qt.layer_controls.widgets.qt_projection_mode_control import (
     QtProjectionModeControl,
 )
+from napari._qt.layer_controls.widgets.qt_ray_tracing_slider import (
+    QtRayTracingSliderControl,
+)
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
 )
@@ -33,6 +36,7 @@ __all__ = [
     'QtOpacityBlendingControls',
     'QtOutSliceCheckBoxControl',
     'QtProjectionModeControl',
+    'QtRayTracingSliderControl',
     'QtTextVisibilityControl',
     'QtWidgetControlsBase',
 ]
