@@ -70,7 +70,7 @@ def test_image_ray_tracing_resolution_visual(make_napari_viewer, qtbot):
         32.352926664548114,
         136.03311454553256,
     )
-    viewer.camera.zoom = 10.0
+    viewer.camera.zoom = 80.0  # Increased 8x for better visibility
 
     # Process events and take screenshot
     qtbot.wait(100)
@@ -136,7 +136,7 @@ def test_labels_ray_tracing_resolution_visual(make_napari_viewer, qtbot):
 
     # Set camera for 3/4 perspective view
     viewer.camera.angles = (30, 45, 0)
-    viewer.camera.zoom = 10.0
+    viewer.camera.zoom = 80.0  # Increased 8x for better visibility
 
     # Process events and take screenshot
     qtbot.wait(100)
@@ -208,6 +208,10 @@ def test_multiple_layers_different_resolutions(make_napari_viewer, qtbot):
         ray_tracing_resolution=4.0,  # Low quality
         translate=[6, 0, 0],  # Offset to see both cubes
     )
+
+    # Set camera to see both cubes clearly
+    viewer.camera.angles = (30, 45, 0)
+    viewer.camera.zoom = 40.0  # Zoom to see both offset cubes
 
     # Get vispy layers
     vispy_layer1 = viewer.window._qt_viewer.layer_to_visual[layer1]
