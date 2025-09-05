@@ -405,7 +405,9 @@ class Labels(ScalarFieldBase):
         self._brush_size = 10
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
-        self._ray_tracing_resolution = ray_tracing_resolution
+        self.ray_tracing_resolution = (
+            ray_tracing_resolution  # Use property setter for validation
+        )
 
         self._selected_label = 1
         self.colormap.selection = self._selected_label

@@ -1,5 +1,6 @@
 from typing import ClassVar
 
+import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QWidget
 from superqt import QLabeledDoubleSlider
@@ -55,52 +56,124 @@ class QtRayTracingSliderControl(QtWidgetControlsBase):
             self._on_ray_tracing_resolution_change
         )
 
-        # Setup widgets
+        # Setup widgets - use QLabeledDoubleSlider but configure it for discrete values
         sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent)
 
-        # Set up the slider with actual float values
-        # Use min and max from preset values
-        sld.setMinimum(self.PRESET_VALUES[0])
-        sld.setMaximum(self.PRESET_VALUES[-1])
-        sld.setSingleStep(0.1)
-        sld.setPageStep(1.0)
+        # Use indices for the slider (0 to len-1) and map to actual values
+        sld.setMinimum(0)
+        sld.setMaximum(len(self.PRESET_VALUES) - 1)
+        sld.setSingleStep(1)
+        sld.setPageStep(1)
+        sld.setDecimals(0)  # Show as integer indices
 
-        # Set the current value
+        # Find the closest preset index for the current value
         current_value = self._layer.ray_tracing_resolution
-        sld.setValue(current_value)
+        current_index = self._find_closest_preset_index(current_value)
+        sld.setValue(current_index)
+
+        # Override the label to show the actual value
+        self._update_slider_label(sld, current_index)
 
         # Connect the value change to our custom handler
         sld.valueChanged.connect(self._on_slider_change)
-        self.ray_tracing_slider = sld
 
+        # Also handle direct label editing
+        sld._label.editingFinished.connect(self._on_label_edited)
+
+        self.ray_tracing_slider = sld
         self.ray_tracing_slider_label = QtWrappedLabel(
             trans._('ray tracing resolution:')
         )
 
-    def _find_closest_preset_value(self, value: float) -> float:
-        """Find the preset value closest to the given value."""
-        import numpy as np
-
+    def _find_closest_preset_index(self, value: float) -> int:
+        """Find the index of the preset value closest to the given value."""
+        # Use logarithmic distance for better perceptual spacing
         distances = [
             abs(np.log10(value / preset)) if preset > 0 else float('inf')
             for preset in self.PRESET_VALUES
         ]
-        min_index = distances.index(min(distances))
-        return self.PRESET_VALUES[min_index]
+        return int(distances.index(min(distances)))
 
-    def _on_slider_change(self, value: float):
-        """Handle slider value changes and snap to nearest preset."""
-        # Find the closest preset value
-        closest_preset = self._find_closest_preset_value(value)
-        # Only update if it's different from current value to avoid loops
-        if abs(self._layer.ray_tracing_resolution - closest_preset) > 1e-6:
-            self._layer.ray_tracing_resolution = closest_preset
+    def _update_slider_label(self, slider: QLabeledDoubleSlider, index: int):
+        """Update the slider label to show the actual preset value."""
+        if 0 <= index < len(self.PRESET_VALUES):
+            actual_value = self.PRESET_VALUES[index]
+            # Format the label based on value magnitude
+            if actual_value >= 1.0:
+                label_text = f'{actual_value:.1f}'
+            elif actual_value >= 0.01:
+                label_text = f'{actual_value:.3f}'
+            else:
+                label_text = f'{actual_value:.4f}'
+            slider._label.setText(label_text)
+
+    def _on_slider_change(self, index_value: float):
+        """Handle slider value changes (index-based)."""
+        index = round(index_value)
+        if 0 <= index < len(self.PRESET_VALUES):
+            # Update the label to show the actual value
+            self._update_slider_label(self.ray_tracing_slider, index)
+            # Set the layer value
+            new_value = self.PRESET_VALUES[index]
+            if abs(self._layer.ray_tracing_resolution - new_value) > 1e-9:
+                self._layer.ray_tracing_resolution = new_value
+
+    def _on_label_edited(self):
+        """Handle direct editing of the label value."""
+        try:
+            # Get the value entered by the user
+            text = self.ray_tracing_slider._label.text()
+            user_value = float(text)
+
+            if user_value <= 0:
+                # Invalid value, reset to current
+                current_index = self._find_closest_preset_index(
+                    self._layer.ray_tracing_resolution
+                )
+                self._update_slider_label(
+                    self.ray_tracing_slider, current_index
+                )
+                return
+
+            # Set the layer value directly (user can enter any positive value)
+            self._layer.ray_tracing_resolution = user_value
+
+            # Find closest preset and update slider position
+            closest_index = self._find_closest_preset_index(user_value)
+            with qt_signals_blocked(self.ray_tracing_slider):
+                self.ray_tracing_slider.setValue(closest_index)
+                # Keep the user's entered value in the label
+                self.ray_tracing_slider._label.setText(text)
+        except (ValueError, AttributeError):
+            # Invalid input, reset to current value
+            current_index = self._find_closest_preset_index(
+                self._layer.ray_tracing_resolution
+            )
+            self._update_slider_label(self.ray_tracing_slider, current_index)
 
     def _on_ray_tracing_resolution_change(self):
         """Receive the layer model ray_tracing_resolution change event and update the slider."""
         with qt_signals_blocked(self.ray_tracing_slider):
             current_value = self._layer.ray_tracing_resolution
-            self.ray_tracing_slider.setValue(current_value)
+            # Find closest preset index
+            closest_index = self._find_closest_preset_index(current_value)
+            self.ray_tracing_slider.setValue(closest_index)
+
+            # If the actual value is not a preset, show it in the label
+            if abs(current_value - self.PRESET_VALUES[closest_index]) > 1e-9:
+                # User has set a custom value programmatically
+                if current_value >= 1.0:
+                    label_text = f'{current_value:.1f}'
+                elif current_value >= 0.01:
+                    label_text = f'{current_value:.3f}'
+                else:
+                    label_text = f'{current_value:.4f}'
+                self.ray_tracing_slider._label.setText(label_text)
+            else:
+                # It's a preset value, update normally
+                self._update_slider_label(
+                    self.ray_tracing_slider, closest_index
+                )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.ray_tracing_slider_label, self.ray_tracing_slider)]

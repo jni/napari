@@ -306,7 +306,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.interpolation2d = interpolation2d
         self.interpolation3d = interpolation3d
         self._attenuation = attenuation
-        self._ray_tracing_resolution = ray_tracing_resolution
+        self.ray_tracing_resolution = (
+            ray_tracing_resolution  # Use property setter for validation
+        )
 
         # Set contrast limits, colormaps and plane parameters
         if contrast_limits is None:
