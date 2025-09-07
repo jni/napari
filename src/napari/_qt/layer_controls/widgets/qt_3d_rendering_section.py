@@ -1,54 +1,36 @@
 """Qt widget for grouping 3D rendering controls."""
 
-from qtpy.QtWidgets import (
-    QFrame,
-    QLabel,
-    QVBoxLayout,
-    QWidget,
-)
+from qtpy.QtWidgets import QLabel
 
 from napari.utils.translations import trans
 
 
-class Qt3DRenderingSection(QWidget):
-    """Container widget for 3D rendering controls with a section label."""
+class Qt3DRenderingSection:
+    """Helper class to manage 3D rendering controls with a section label."""
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setup_ui()
+    def __init__(self, parent_layout):
+        """Initialize the section.
+
+        Parameters
+        ----------
+        parent_layout : QFormLayout
+            The parent form layout to add controls to
+        """
+        self.parent_layout = parent_layout
         self._controls = []
+        self._widgets = []
+        self.setup_section()
 
-    def setup_ui(self):
-        """Set up the UI with a section label and container for controls."""
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 10, 0, 0)
-        layout.setSpacing(4)
-
-        # Section header
-        self.section_label = QLabel(trans._('3D rendering'))
-        self.section_label.setStyleSheet(
-            'font-weight: bold; margin-bottom: 4px;'
-        )
-        layout.addWidget(self.section_label)
-
-        # Separator line
-        line = QFrame()
-        line.setFrameShape(QFrame.HLine)
-        line.setFrameShadow(QFrame.Sunken)
-        layout.addWidget(line)
-
-        # Container for the controls
-        self.controls_container = QWidget()
-        self.controls_layout = QVBoxLayout()
-        self.controls_layout.setContentsMargins(0, 0, 0, 0)
-        self.controls_layout.setSpacing(4)
-        self.controls_container.setLayout(self.controls_layout)
-        layout.addWidget(self.controls_container)
-
-        self.setLayout(layout)
+    def setup_section(self):
+        """Add the section label to the parent layout."""
+        # Simple section label, no special styling
+        self.section_label = QLabel(trans._('3D rendering:'))
+        # Add label spanning both columns
+        self.parent_layout.addRow(self.section_label)
+        self._widgets.append(self.section_label)
 
     def add_control(self, label_widget, control_widget):
-        """Add a control to the 3D rendering section.
+        """Add a control to the parent layout under this section.
 
         Parameters
         ----------
@@ -57,27 +39,23 @@ class Qt3DRenderingSection(QWidget):
         control_widget : QWidget
             The actual control widget
         """
-        # Create horizontal container for label and control
-        from qtpy.QtWidgets import QHBoxLayout, QWidget
-
-        row = QWidget()
-        row_layout = QHBoxLayout()
-        row_layout.setContentsMargins(0, 0, 0, 0)
-        row_layout.addWidget(label_widget)
-        row_layout.addWidget(control_widget)
-        row.setLayout(row_layout)
-
-        self.controls_layout.addWidget(row)
+        # Add the control directly to the parent layout
+        self.parent_layout.addRow(label_widget, control_widget)
         self._controls.append((label_widget, control_widget))
 
-    def set_visible(self, visible):
-        """Set visibility of the entire section."""
-        self.setVisible(visible)
-
     def show_section(self):
-        """Show the 3D rendering section."""
-        self.setVisible(True)
+        """Show the 3D rendering section label."""
+        # Only show section widgets (the label), not the controls
+        # Let controls manage their own visibility
+        for widget in self._widgets:
+            widget.setVisible(True)
 
     def hide_section(self):
-        """Hide the 3D rendering section."""
-        self.setVisible(False)
+        """Hide the 3D rendering section and all its controls."""
+        # Hide section widgets
+        for widget in self._widgets:
+            widget.setVisible(False)
+        # Hide all controls when switching to 2D
+        for label, control in self._controls:
+            label.setVisible(False)
+            control.setVisible(False)

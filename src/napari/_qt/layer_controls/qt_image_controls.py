@@ -56,15 +56,15 @@ class QtImageControls(QtBaseImageControls):
         )
         self._add_widget_controls(self._interpolation_control)
 
-        # Create 3D rendering section
-        self._3d_rendering_section = Qt3DRenderingSection(self)
+        # Create 3D rendering section (pass the layout, not self)
+        self._3d_rendering_section = Qt3DRenderingSection(self.layout())
 
         # Create 3D-specific controls
         self._depiction_control = QtDepictionControl(self, layer)
         self._render_control = QtImageRenderControl(self, layer)
         self._ray_tracing_control = QtRayTracingSliderControl(self, layer)
 
-        # Add 3D controls to the 3D rendering section instead of main layout
+        # Add 3D controls to the section
         for label, control in self._depiction_control.get_widget_controls():
             self._3d_rendering_section.add_control(label, control)
         for label, control in self._render_control.get_widget_controls():
@@ -72,17 +72,26 @@ class QtImageControls(QtBaseImageControls):
         for label, control in self._ray_tracing_control.get_widget_controls():
             self._3d_rendering_section.add_control(label, control)
 
-        # Add the section widget itself to the main layout
-        self.layout().addWidget(self._3d_rendering_section)
+        # Call visibility updates after controls are added to layout
+        self._depiction_control._update_plane_parameter_visibility()
+        self._render_control._update_rendering_parameter_visibility()
 
         self._on_ndisplay_changed()
 
     def _on_ndisplay_changed(self):
         """Update widget visibility based on 2D and 3D visualization modes."""
         self._interpolation_control._update_interpolation_combo(self.ndisplay)
-        self._depiction_control._update_plane_parameter_visibility()
         if self.ndisplay == 2:
             self._3d_rendering_section.hide_section()
+            self._depiction_control._on_display_change_hide()
+            self._render_control._on_display_change_hide()
+            self._ray_tracing_control._on_display_change_hide()
         else:
             self._3d_rendering_section.show_section()
+            self._depiction_control._on_display_change_show()
+            self._render_control._on_display_change_show()
+            self._ray_tracing_control._on_display_change_show()
+            # Update conditional visibility after showing main controls
+            self._depiction_control._update_plane_parameter_visibility()
+            self._render_control._update_rendering_parameter_visibility()
         super()._on_ndisplay_changed()

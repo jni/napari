@@ -144,21 +144,19 @@ class QtLabelsControls(QtLayerControls):
         self._brush_size_slider_control = QtBrushSizeSliderControl(self, layer)
         self._add_widget_controls(self._brush_size_slider_control)
 
-        # Create 3D rendering section
-        self._3d_rendering_section = Qt3DRenderingSection(self)
+        # Create 3D rendering section (pass the layout, not self)
+        self._3d_rendering_section = Qt3DRenderingSection(self.layout())
 
         # Create 3D-specific controls
         self._render_control = QtLabelRenderControl(self, layer)
         self._ray_tracing_control = QtRayTracingSliderControl(self, layer)
 
-        # Add 3D controls to the 3D rendering section
+        # Add 3D controls to the section
         for label, control in self._render_control.get_widget_controls():
             self._3d_rendering_section.add_control(label, control)
         for label, control in self._ray_tracing_control.get_widget_controls():
             self._3d_rendering_section.add_control(label, control)
 
-        # Add the section widget to the main layout
-        self.layout().addWidget(self._3d_rendering_section)
         self._colormode_combobox_control = QtColorModeComboBoxControl(
             self, layer
         )
@@ -212,8 +210,12 @@ class QtLabelsControls(QtLayerControls):
         show_3d_widgets = self.ndisplay == 3
         if show_3d_widgets:
             self._3d_rendering_section.show_section()
+            self._render_control._on_display_change_show()
+            self._ray_tracing_control._on_display_change_show()
         else:
             self._3d_rendering_section.hide_section()
+            self._render_control._on_display_change_hide()
+            self._ray_tracing_control._on_display_change_hide()
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()
